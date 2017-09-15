@@ -96,8 +96,8 @@ int main (int argc, char* arg[]) {
   robot.print();
 
   Vector3d ph(L[1],0.0,0.0), ph0;
-  // 0->First link, 1->Second link
-  ph0 = robot.position_from_base( 1, ph );
+  // 1->First link, 2->Second link
+  ph0 = robot.position_from_base( 2, ph );
 
   std::cout << "ph':\n" << ph.transpose() << std::endl;
   std::cout << "ph0':\n" << ph0.transpose() << std::endl;
