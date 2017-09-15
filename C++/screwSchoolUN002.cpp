@@ -19,6 +19,30 @@ struct RobotModel {
       Xi[i] = XJi[i]*XTi[i];
     }
   };
+  void print(void)  const {
+    int i;
+    std::cout << "q: ";
+    for ( i=0;i<dof;i++ )
+      std::cout << qi[i] << " ";
+    std::cout << std::endl;
+    std::cout << "li: ";
+    for ( i=0;i<dof;i++ )
+      std::cout << li[i] << " ";
+    std::cout << std::endl;
+    std::cout << "==> Joint transformations:\n";
+    for ( i=0;i<dof;i++ )
+      std::cout << "=> Joint " << i << ":\n" << XJi[i] << "\n";
+    std::cout << std::endl;
+    std::cout << "==> Link transformations:\n";
+    for ( i=0;i<dof;i++ )
+      std::cout << "=> Link " << i << ":\n" << XTi[i] << "\n";
+    std::cout << std::endl;
+    std::cout << "==> Link-to-link transformations:\n";
+    for ( i=0;i<dof;i++ )
+      std::cout << "=> lambda(" << i << ")-to-" << i << ":\n" << Xi[i] << "\n";
+    std::cout << std::endl;
+  };
+
   int dof;
   double qi[2];
   double li[2];
@@ -41,6 +65,7 @@ int main (int argc, char* arg[]) {
   std::cout << "        Using Spatial Math Utils "
 	    << std::endl << std::endl;
 
+  robot.print();
 
   return 0;
 }
