@@ -97,10 +97,21 @@ int main (int argc, char* arg[]) {
 
   Vector3d ph(L[1],0.0,0.0), ph0;
   // 1->First link, 2->Second link
-  ph0 = robot.position_from_base( 2, ph );
+  ph0 = robot.position_from_base( dofs, ph );
 
+  std::cout << "Solving direct kinematic: position" << std::endl;
   std::cout << "ph':\n" << ph.transpose() << std::endl;
   std::cout << "ph0':\n" << ph0.transpose() << std::endl;
+
+  SpatialVector s1(.0,.0,1.,.0,.0,.0), s2=s1;
+
+  MatrixNd Ji(6,2), J0i(6,2);
+  Ji << robot.Xi[1].apply(s1), s2;
+  J0i << robot.Xi[0].inverse().apply(s1), (robot.Xi[1]*robot.Xi[0]).inverse().apply(s2);  
+
+  std::cout << "Spacial Jacobian of body i:" << std::endl;
+  std::cout << "Ji':\n" << Ji.transpose() << std::endl;
+  std::cout << "J0i':\n" << J0i.transpose() << std::endl;
 
   return 0;
 }
