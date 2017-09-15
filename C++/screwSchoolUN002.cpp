@@ -113,5 +113,13 @@ int main (int argc, char* arg[]) {
   std::cout << "Ji':\n" << Ji.transpose() << std::endl;
   std::cout << "J0i':\n" << J0i.transpose() << std::endl;
 
+  MatrixNd Jphi(6,2), Jph0i(6,2);
+  Jphi = Xtrans(ph).toMatrix()*Ji;
+  Jph0i = Xtrans(ph0).toMatrix()*J0i;
+
+  std::cout << "Point ph Jacobian of body i:" << std::endl;
+  std::cout << "Jphi':\n" << Jphi.transpose() << std::endl;
+  std::cout << "Jph0i':\n" << Jph0i.transpose() << std::endl;
+
   return 0;
 }
