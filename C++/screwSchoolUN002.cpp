@@ -126,5 +126,19 @@ int main (int argc, char* arg[]) {
   std::cout << "Spacial velocity vh of body i at point ph:" << std::endl;
   std::cout << "v0':\n" << v0.transpose() << std::endl;
   
+  std::cout << "==========================================================" << std::endl;
+  std::cout << "        Using Model Class and Kinematic Functions"
+	    << std::endl << std::endl;
+  
+  // create a robot with Model class in rbdl library.
+  Model robot2R;
+  // define joints and links
+  Joint joint_1 = Joint(JointTypeRevoluteZ), joint_2 = Joint(JointTypeRevoluteZ);
+  unsigned int link_1_id, link_2_id;
+  Body link_1 = Body(), link_2 = Body();
+  // asssemble
+  link_1_id = robot2R.AddBody(         0, Xtrans(Vector3d(0.,0.,0.)), joint_1, link_1);
+  link_2_id = robot2R.AddBody( link_1_id, Xtrans(Vector3d(L1,0.,0.)), joint_2, link_2);
+
   return 0;
 }
