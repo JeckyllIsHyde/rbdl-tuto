@@ -2,6 +2,10 @@
   How to do: 
   6D basic oprations in a planar robot with 2dofs. 
   Inverse and direct kinematics in position and velocity in different frames.
+
+  Two approaches:
+  1. Using Math utils form rbdl library (Must understand Featherstone's method).
+  2. Using Model, Body, Joint and Kinematic modules from rbdl library.
  */
 #include <iostream>
 
@@ -167,6 +171,13 @@ int main (int argc, char* arg[]) {
   std::cout << "Linear velocity Jacobian at point ph, Jphi(4:6,:):" << std::endl;
   CalcPointJacobian( robot2R, Q, link_2_id, ph, Jphi, false );
   std::cout << "Jphi':\n" << Jphi.block(0,0,3,2).transpose() << std::endl;
+
+  VectorNd QDot = VectorNd::Zero( robot2R.dof_count );
+  QDot << 0.0, 1.0;
+  UpdateKinematicsCustom ( robot2R, &Q, &QDot, NULL );
+  Vector3d v0_3d = CalcPointVelocity( robot2R, Q, QDot, link_2_id, ph, false );
+  std::cout << "Linear velocity at point ph (global coords)" << std::endl;
+  std::cout << "v0': \n" << v0_3d.transpose() << std::endl;
 
 
   return 0;
