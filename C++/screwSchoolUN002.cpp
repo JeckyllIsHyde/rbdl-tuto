@@ -145,17 +145,29 @@ int main (int argc, char* arg[]) {
   UpdateKinematicsCustom ( robot2R, &Q, NULL, NULL );
   std::cout << "Final efector position ph in global coords:" << std::endl;
   ph0 = CalcBodyToBaseCoordinates( robot2R, Q, link_2_id, ph, false );
-  std::cout << "ph0':\n " << ph0.transpose() << std::endl << std::endl;
+  std::cout << "ph0':\n" << ph0.transpose() << std::endl << std::endl;
 
   Ji.setZero();
   std::cout << "Spatial Jacobian in local coords:" << std::endl;
   CalcBodySpatialJacobian( robot2R, Q, link_2_id, Ji, false );
-  std::cout << "Ji':\n " << Ji.transpose() << std::endl;
+  std::cout << "Ji':\n" << Ji.transpose() << std::endl;
   std::cout << "Spatial Jacobian in global coords:" << std::endl;
-  std::cout << "J0i':\n "
+  std::cout << "J0i':\n"
 	    << ((robot2R.X_lambda[2]*robot2R.X_lambda[1]*robot2R.X_lambda[0]).
 		inverse().toMatrix()*Ji).transpose()
 	    << std::endl << std::endl;
+
+  Jph0i.setZero();
+  ph = CalcBaseToBodyCoordinates( robot2R, Q, link_2_id, ph0, false );
+  std::cout << "Jacobiano 6D del punto ph, Jph0i (global coords):" << std::endl;
+  CalcPointJacobian6D( robot2R, Q, link_2_id, ph, Jph0i, false );
+  std::cout << "Jph0i':\n" << Jph0i.transpose() << std::endl;
+
+  Jphi.setZero();
+  std::cout << "Linear velocity Jacobian at point ph, Jphi(4:6,:):" << std::endl;
+  CalcPointJacobian( robot2R, Q, link_2_id, ph, Jphi, false );
+  std::cout << "Jphi':\n" << Jphi.block(0,0,3,2).transpose() << std::endl;
+
 
   return 0;
 }
