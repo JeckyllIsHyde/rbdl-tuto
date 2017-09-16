@@ -121,5 +121,10 @@ int main (int argc, char* arg[]) {
   std::cout << "Jphi':\n" << Jphi.transpose() << std::endl;
   std::cout << "Jph0i':\n" << Jph0i.transpose() << std::endl;
 
+  VectorNd qp(2); qp << 0,1;
+  SpatialVector v0 = Jph0i*qp;
+  std::cout << "Spacial velocity vh of body i at point ph:" << std::endl;
+  std::cout << "v0':\n" << v0.transpose() << std::endl;
+  
   return 0;
 }
