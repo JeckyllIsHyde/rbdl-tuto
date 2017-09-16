@@ -138,7 +138,24 @@ int main (int argc, char* arg[]) {
   Body link_1 = Body(), link_2 = Body();
   // asssemble
   link_1_id = robot2R.AddBody(         0, Xtrans(Vector3d(0.,0.,0.)), joint_1, link_1);
-  link_2_id = robot2R.AddBody( link_1_id, Xtrans(Vector3d(L1,0.,0.)), joint_2, link_2);
+  link_2_id = robot2R.AddBody( link_1_id, Xtrans(Vector3d(L[0],0.,0.)), joint_2, link_2);
+
+  VectorNd Q = VectorNd::Zero( robot2R.dof_count );
+  Q << q[0], q[1]; 
+  UpdateKinematicsCustom ( robot2R, &Q, NULL, NULL );
+  std::cout << "Final efector position ph in global coords:" << std::endl;
+  ph0 = CalcBodyToBaseCoordinates( robot2R, Q, link_2_id, ph, false );
+  std::cout << "ph0':\n " << ph0.transpose() << std::endl << std::endl;
+
+  Ji.setZero();
+  std::cout << "Spatial Jacobian in local coords:" << std::endl;
+  CalcBodySpatialJacobian( robot2R, Q, link_2_id, Ji, false );
+  std::cout << "Ji':\n " << Ji.transpose() << std::endl;
+  std::cout << "Spatial Jacobian in global coords:" << std::endl;
+  std::cout << "J0i':\n "
+	    << ((robot2R.X_lambda[2]*robot2R.X_lambda[1]*robot2R.X_lambda[0]).
+		inverse().toMatrix()*Ji).transpose()
+	    << std::endl << std::endl;
 
   return 0;
 }
