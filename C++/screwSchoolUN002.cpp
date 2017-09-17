@@ -157,8 +157,7 @@ int main (int argc, char* arg[]) {
   std::cout << "Ji':\n" << Ji.transpose() << std::endl;
   std::cout << "Spatial Jacobian in global coords:" << std::endl;
   std::cout << "J0i':\n"
-	    << ((robot2R.X_lambda[2]*robot2R.X_lambda[1]*robot2R.X_lambda[0]).
-		inverse().toMatrix()*Ji).transpose()
+	    << (robot2R.X_base[2].inverse().toMatrix()*Ji).transpose()
 	    << std::endl << std::endl;
 
   Jph0i.setZero();
