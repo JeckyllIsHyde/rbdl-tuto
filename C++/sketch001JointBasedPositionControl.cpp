@@ -19,6 +19,8 @@ using namespace boost::numeric::odeint;
 
 typedef std::vector<double> Estado_type;
 
+double stepFcn(double t, double a) { return std::max(0,(t-a>=0)?1:-1); };
+
 struct DynRobotFunctor {
   Model* m_model;
   VectorNd q, qd, qdd, tau;
