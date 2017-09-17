@@ -4,6 +4,16 @@
 #include <iostream>
 #include <string>
 
+void gp_draw_link( double* p1, double* p2 );
+void gp_draw_point( double* p );
+void gp_draw_init( const char* xrange = "[-1.1:1.1]",
+		   const char* yrange = "[-1.1:1.1]");
+void gp_draw_set_gif_output( const char* filename );
+void gp_draw_init_frame( const std::string& str );
+void gp_draw_end_frame( void ) {  std::cout << std::endl; }
+void gp_draw_end( void ) { std::cout << std::endl; }
+void gp_draw_robot2R( double* q, double* L, double* p );
+
 void gp_draw_link( double* p1, double* p2 ) {
   std::cout << ",(" << p2[0] << "-" << p1[0] <<")*t/7+" << p1[0]
 	    << ",(" << p2[1] << "-" << p1[1] <<")*t/7+" << p1[1] << " lw 3 lc 'blue'";
@@ -14,8 +24,7 @@ void gp_draw_point( double* p ) {
   std::cout << ",0.01*cos(t) + " << p[0] << ", 0.01*sin(t) + " << p[1] << " lw 5 lc 'red'";
 }
 
-void gp_draw_init( const char* xrange = "[-1.1:1.1]",
-		   const char* yrange = "[-1.1:1.1]") {
+void gp_draw_init( const char* xrange, const char* yrange) {
   std::cout << "unset key" << std::endl; 
   std::cout << "set xrange " << xrange << std::endl;
   std::cout << "set yrange " << yrange << std::endl;
@@ -36,10 +45,6 @@ void gp_draw_init_frame( const std::string& str ) {
   std::cout << "set title '" << str << "'" << std::endl;
   std::cout << "plot 0,0 ";
 }
-
-void gp_draw_end_frame( void ) {  std::cout << std::endl; }
-
-void gp_draw_end( void ) { std::cout << std::endl; }
 
 void gp_draw_robot2R( double* q, double* L, double* p ) {
   double b[2] = {L[0]*cos(q[0])+p[0], L[0]*sin(q[0])+p[1]},
