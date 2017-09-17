@@ -21,6 +21,16 @@ typedef std::vector<double> Estado_type;
 
 double stepFcn(double t, double a) { return std::max(0,(t-a>=0)?1:-1); };
 
+struct ObserverFunctor {
+  void operator() ( const Estado_type &x, double t ) {
+    std::cout << t << " "
+	      << x[0] << " "
+	      << x[1] << " "
+	      << x[2] << " "
+	      << x[3] << std::endl;
+  };
+};
+
 struct DynRobotFunctor {
   Model* m_model;
   VectorNd q, qd, qdd, tau;
@@ -92,7 +102,7 @@ int main (int argc, char* arg[]) {
   Estado_type x(2*robot2R.dof_count);
 
   x[0] = x[1] = x[2] = x[3] =0.0;
-  integrate( dynRobotFnc, x, t_init, t_end, dt );
+  integrate( dynRobotFnc, x, t_init, t_end, dt, ObserverFunctor() );
 
   return 0;
 }
