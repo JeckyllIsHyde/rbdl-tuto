@@ -4,7 +4,7 @@
 
   Construction from Model API is more compact than URDF file.
   Use InverseDynamics() to compute torques and spatial forces on each link.
-  
+  Use InverseDynamics() to apply external forces on each link.  
  */
 #include <iostream>
 #include <cmath>
@@ -57,6 +57,30 @@ int main (int argc, char* arg[]) {
   std::cout << "internal joint forces:" << std::endl;
   std::cout << "q1:\n" << robot2R.f[1].transpose() << std::endl
 	    << "q2:\n" << robot2R.f[2].transpose() << std::endl << std::endl;
+
+  std::cout << "applying external forces:" << std::endl;
+  std::vector<Math::SpatialVector> f_ext;
+  Vector3d p, fp;
+  p << L[0],0.0,0.0;
+  fp << 0.0,0.0,-1.0;
+  f_ext.push_back(SpatialVectorZero);
+  f_ext.push_back(SpatialVectorZero);
+  f_ext[1] << VectorCrossMatrix(p)*fp, fp;
+  p << L[0]+L[1],0.0,0.0;
+  fp << 0.0,0.0,-1.0;
+  fp = 2*fp;
+  f_ext.push_back(SpatialVectorZero);
+  f_ext[2] << VectorCrossMatrix(p)*fp, fp;
+
+  InverseDynamics( robot2R, q, qd, qdd, tau, &f_ext );
+  std::cout << "torques:" << std::endl;
+  std::cout << tau.transpose() << std::endl << std::endl;
+  std::cout << "internal joint forces:" << std::endl;
+  std::cout << robot2R.f[1].transpose() << std::endl
+	    << robot2R.f[2].transpose() << std::endl << std::endl;
+  std::cout << "external joint forces:" << std::endl;
+  std::cout << f_ext[1].transpose() << std::endl
+	    << f_ext[2].transpose() << std::endl << std::endl;
 
   return 0;
 }
