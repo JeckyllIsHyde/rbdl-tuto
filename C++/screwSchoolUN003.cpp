@@ -1,6 +1,10 @@
 /*
   How to do: 
   6D basic oprations in a Robot2R for its statics.
+
+  Construction from Model API is more compact than URDF file.
+  Use InverseDynamics() to compute torques and spatial forces on each link.
+  
  */
 #include <iostream>
 #include <cmath>
@@ -40,5 +44,19 @@ int main (int argc, char* arg[]) {
   std::cout << "Overview robot2R:" << std::endl;
   std::cout << GetModelHierarchy(robot2R) << std::endl;
   
+  VectorNd q = VectorNd::Zero(robot2R.dof_count);
+  VectorNd qd = VectorNd::Zero(robot2R.dof_count);
+  VectorNd qdd = VectorNd::Zero(robot2R.dof_count);
+  VectorNd tau = VectorNd::Zero(robot2R.dof_count);
+
+  q << 0.0, 0.0;
+  // Inverse dynamics for statics
+  InverseDynamics( robot2R, q, qd, qdd, tau );
+  std::cout << "torques:" << std::endl;
+  std::cout << tau.transpose() << std::endl << std::endl;
+  std::cout << "internal joint forces:" << std::endl;
+  std::cout << "q1:\n" << robot2R.f[1].transpose() << std::endl
+	    << "q2:\n" << robot2R.f[2].transpose() << std::endl << std::endl;
+
   return 0;
 }
