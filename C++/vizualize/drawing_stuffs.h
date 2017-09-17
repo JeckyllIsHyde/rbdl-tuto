@@ -10,4 +10,8 @@ void gp_draw_link( double* p1, double* p2 ) {
   std::cout << ",0.01*cos(t) + " << p1[0] << ", 0.01*sin(t) + " << p1[1] << " lw 5 lc 'yellow'";
 }
 
+void gp_draw_point( double* p ) {
+  std::cout << ",0.01*cos(t) + " << p[0] << ", 0.01*sin(t) + " << p[1] << " lw 5 lc 'red'";
+}
+
 #endif //DRAWING_STUFFS_H_
