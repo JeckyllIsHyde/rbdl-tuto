@@ -17,6 +17,42 @@ using namespace RigidBodyDynamics::Math;
 
 using namespace boost::numeric::odeint;
 
+typedef std::vector<double> Estado_type;
+
+struct DynRobotFunctor {
+  Model* m_model;
+  VectorNd q, qd, qdd, tau;
+  DynRobotFunctor(Model* model) : m_model(model) {
+    q = VectorNd::Zero (model->dof_count);
+    qd = VectorNd::Zero (model->dof_count);
+    qdd = VectorNd::Zero (model->dof_count);
+    tau = VectorNd::Zero (m_model->dof_count);
+  }
+  void operator() (const Estado_type &x, Estado_type &dxdt, double t ) {
+    q = VectorNd::Map(&x[0], m_model->dof_count);
+    qd = VectorNd::Map(&x[m_model->dof_count], m_model->dof_count);
+
+    double pi = M_PI, xDesired[2];
+    double kp = 10.0, kd = 1.0;
+    
+    xDesired[0] = pi/4*stepFcn(t,0)-pi/4*stepFcn(t,2.5)+pi/4*stepFcn(t,5)-pi/4*stepFcn(t,7.5);
+    xDesired[1] = pi/4*stepFcn(t,0)-pi/4*stepFcn(t,2.5)+pi/4*stepFcn(t,5)+pi/4*stepFcn(t,7.5);
+
+    tau[0] = kp*(xDesired[0]-q[0]) - kd*qd[0];
+    tau[1] = kp*(xDesired[1]-q[1]) - kd*qd[1];
+    
+    std::vector<Math::SpatialVector> f_ext(3);
+    double b = 0.1;
+    f_ext[0] = f_ext[1] = f_ext[2] = SpatialVectorZero;
+    f_ext[1][1] = b*(qd[1]-qd[0]);
+    f_ext[2][1] = -b*qd[1];
+
+    ForwardDynamics (*m_model, q, qd, tau, qdd, &f_ext );
+    dxdt[0] = qd[0]; dxdt[1] = qd[1];
+    dxdt[2] = qdd[0]; dxdt[3] = qdd[1];
+  }
+};
+
 void createRobotArm(const double *L, const double *m, const Vector3d& g,
 		    Model& robot) {
   
@@ -48,5 +84,13 @@ int main (int argc, char* arg[]) {
   Model robot2R;
   createRobotArm( L, m, gravity, robot2R);
   
+
+  DynRobotFunctor dynRobotFnc(&robot2R);
+  double t = 0.0, t_init = 0.0, t_end = 10.0, dt = 0.01;
+  Estado_type x(2*robot2R.dof_count);
+
+  x[0] = x[1] = x[2] = x[3] =0.0;
+  integrate( dynRobotFnc, x, t_init, t_end, dt );
+
   return 0;
 }
