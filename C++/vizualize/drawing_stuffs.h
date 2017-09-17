@@ -37,4 +37,8 @@ void gp_draw_init_frame( const std::string& str ) {
   std::cout << "plot 0,0 ";
 }
 
+void gp_draw_end_frame( void ) {  std::cout << std::endl; }
+
+void gp_draw_end( void ) { std::cout << std::endl; }
+
 #endif //DRAWING_STUFFS_H_
