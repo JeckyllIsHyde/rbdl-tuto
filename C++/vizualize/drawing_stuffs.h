@@ -41,4 +41,12 @@ void gp_draw_end_frame( void ) {  std::cout << std::endl; }
 
 void gp_draw_end( void ) { std::cout << std::endl; }
 
+void gp_draw_robot2R( double* q, double* L, double* p ) {
+  double b[2] = {L[0]*cos(q[0])+p[0], L[0]*sin(q[0])+p[1]},
+    c[2] = {L[1]*cos(q[0]+q[1])+b[0],L[1]*sin(q[0]+q[1])+b[1]};
+  gp_draw_link(p,b);
+  gp_draw_link(b,c);
+  gp_draw_point(c);
+}
+
 #endif //DRAWING_STUFFS_H_
