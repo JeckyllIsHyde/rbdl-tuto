@@ -20,6 +20,7 @@ using namespace boost::numeric::odeint;
 typedef std::vector<double> Estado_type;
 
 double stepFcn(double t, double a) { return std::max(0,(t-a>=0)?1:-1); };
+double rampFcn(double t, double a) { return std::max(0.0,t-a); };
 
 struct ObserverFunctor {
   void operator() ( const Estado_type &x, double t ) {
@@ -31,20 +32,36 @@ struct ObserverFunctor {
   };
 };
 
+void qDesiredForRegulationFcn (const double t, VectorNd& qD ) {
+  double pi = M_PI;
+
+  qD[0] = pi/4*stepFcn(t,0)-pi/4*stepFcn(t,2.5)+pi/4*stepFcn(t,5)-pi/4*stepFcn(t,7.5);
+  qD[1] = pi/4*stepFcn(t,0)-pi/4*stepFcn(t,2.5)+pi/4*stepFcn(t,5)+pi/4*stepFcn(t,7.5);
+};
+
+void qDesiredForTrakingFcn (const double t, VectorNd& qD ) {
+  double pi = M_PI;
+
+  qD[0] = pi/4/2.5*rampFcn(t,0)-pi/4/1.25*rampFcn(t,2.5)
+    +pi/4/1.25*rampFcn(t,5)-pi/4/1.25*rampFcn(t,7.5);
+  qD[1] = pi/4/2.5*rampFcn(t,0)-pi/4/1.25*rampFcn(t,2.5)
+    +pi/4/1.25*rampFcn(t,5)-pi/4/1.25*rampFcn(t,7.5);
+};
+
 void PDControllerFcn( Model& model,
 		      const VectorNd& q, const VectorNd& qd,
-		      const VectorNd& xDesired, VectorNd& tau ) {
+		      const VectorNd& qD, VectorNd& tau ) {
   double kp = 10.0, kd = 1.0;
-  tau[0] = kp*(xDesired[0]-q[0]) - kd*qd[0];
-  tau[1] = kp*(xDesired[1]-q[1]) - kd*qd[1];
+  tau[0] = kp*(qD[0]-q[0]) - kd*qd[0];
+  tau[1] = kp*(qD[1]-q[1]) - kd*qd[1];
 }
 
 void PDWithGCControllerFcn( Model& model,
 			    const VectorNd& q, const VectorNd& qd,
-			    const VectorNd& xDesired, VectorNd& tau ) {
+			    const VectorNd& qD, VectorNd& tau ) {
   double kp = 10.0, kd = 1.0;
   InverseDynamics( model, q, 0*q, 0*q, tau );
-  tau = kp*(xDesired-q) + kd*(-qd) + tau;
+  tau = kp*(qD-q) + kd*(-qd) + tau;
 }
 
 struct DynRobotFunctor {
@@ -59,16 +76,17 @@ struct DynRobotFunctor {
   void operator() (const Estado_type &x, Estado_type &dxdt, double t ) {
     q = VectorNd::Map(&x[0], m_model->dof_count);
     qd = VectorNd::Map(&x[m_model->dof_count], m_model->dof_count);
-    VectorNd xDesired(m_model->dof_count);
+    VectorNd qDesired(m_model->dof_count);
 
     double pi = M_PI;
-    
-    xDesired[0] = pi/4*stepFcn(t,0)-pi/4*stepFcn(t,2.5)+pi/4*stepFcn(t,5)-pi/4*stepFcn(t,7.5);
-    xDesired[1] = pi/4*stepFcn(t,0)-pi/4*stepFcn(t,2.5)+pi/4*stepFcn(t,5)+pi/4*stepFcn(t,7.5);
 
+    //
+    qDesiredForRegulationFcn ( t, qDesired );
+    // qDesiredForTrakingFcn ( t, qDesired );
+      
     // controller function
-    // PDControllerFcn( *m_model, q, qd, xDesired, tau );
-    PDWithGCControllerFcn( *m_model, q, qd, xDesired, tau );
+    // PDControllerFcn( *m_model, q, qd, qDesired, tau );
+    PDWithGCControllerFcn( *m_model, q, qd, qDesired, tau );
     
     std::vector<Math::SpatialVector> f_ext(3);
     double b = 0.1;
