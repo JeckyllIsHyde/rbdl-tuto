@@ -2,7 +2,7 @@
   How to do: 
   A position control for a robot2R planar
 
-  
+  1. PD controller
  */
 
 #include <iostream>
@@ -31,6 +31,13 @@ struct ObserverFunctor {
   };
 };
 
+void controllerFcn( const VectorNd& q, const VectorNd& qd,
+		    const double* xDesired, VectorNd& tau ) {
+  double kp = 10.0, kd = 1.0;
+  tau[0] = kp*(xDesired[0]-q[0]) - kd*qd[0];
+  tau[1] = kp*(xDesired[1]-q[1]) - kd*qd[1];
+}
+
 struct DynRobotFunctor {
   Model* m_model;
   VectorNd q, qd, qdd, tau;
@@ -45,13 +52,14 @@ struct DynRobotFunctor {
     qd = VectorNd::Map(&x[m_model->dof_count], m_model->dof_count);
 
     double pi = M_PI, xDesired[2];
-    double kp = 10.0, kd = 1.0;
     
     xDesired[0] = pi/4*stepFcn(t,0)-pi/4*stepFcn(t,2.5)+pi/4*stepFcn(t,5)-pi/4*stepFcn(t,7.5);
     xDesired[1] = pi/4*stepFcn(t,0)-pi/4*stepFcn(t,2.5)+pi/4*stepFcn(t,5)+pi/4*stepFcn(t,7.5);
 
-    tau[0] = kp*(xDesired[0]-q[0]) - kd*qd[0];
-    tau[1] = kp*(xDesired[1]-q[1]) - kd*qd[1];
+    //
+    // tau[0] = kp*(xDesired[0]-q[0]) - kd*qd[0];
+    // tau[1] = kp*(xDesired[1]-q[1]) - kd*qd[1];
+    controllerFcn( q, qd, xDesired, tau );
     
     std::vector<Math::SpatialVector> f_ext(3);
     double b = 0.1;
