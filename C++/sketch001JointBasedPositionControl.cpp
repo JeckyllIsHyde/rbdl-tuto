@@ -83,7 +83,7 @@ void PDWithIDControllerFcn( Model& model,
 			    const VectorNd& qD, const VectorNd& qdD,const VectorNd& qddD,
 			    VectorNd& tau,
 			    std::vector<Math::SpatialVector>& f_ext ) {
-  //  double kp = 10.0, kd = 1.0;
+  // double kp = 10.0, kd = 1.0;
   double kp = 39.47, kd = 12.57;
   MatrixNd H = MatrixNd::Zero ( model.dof_count,
 				model.dof_count );
@@ -95,7 +95,18 @@ void PDWithIDControllerFcn( Model& model,
 struct DynRobotFunctor {
   Model* m_model;
   VectorNd q, qd, qdd, tau;
-  DynRobotFunctor(Model* model) : m_model(model) {
+  void (*controllerFcn)( Model&,
+			 const VectorNd&, const VectorNd&,
+			 const VectorNd&, const VectorNd&,const VectorNd&,
+			 VectorNd&,
+			 std::vector<Math::SpatialVector>& );
+  void (*qDesiredFcn)( const double, VectorNd&, VectorNd&, VectorNd& );
+  DynRobotFunctor( Model* model,
+		   void (*ctrlerFcn)( Model& model, const VectorNd&, const VectorNd&,
+				      const VectorNd&, const VectorNd&, const VectorNd&,
+				      VectorNd&, std::vector<Math::SpatialVector>&),
+		   void (*qDFcn)( const double, VectorNd&, VectorNd&, VectorNd& ) )
+    : m_model( model ), controllerFcn( ctrlerFcn ), qDesiredFcn( qDFcn ) {
     q = VectorNd::Zero (model->dof_count);
     qd = VectorNd::Zero (model->dof_count);
     qdd = VectorNd::Zero (model->dof_count);
@@ -110,9 +121,8 @@ struct DynRobotFunctor {
 
     double pi = M_PI;
 
-    //
-    // qDesiredForRegulationFcn ( t, qDesired, qdDesired, qddDesired );
-    qDesiredForTrakingFcn ( t, qDesired, qdDesired, qddDesired );
+    // q(t) desired function
+    qDesiredFcn ( t, qDesired, qdDesired, qddDesired );
       
     std::vector<Math::SpatialVector> f_ext(3);
     double b = 0.1;
@@ -121,9 +131,7 @@ struct DynRobotFunctor {
     f_ext[2][1] = -b*qd[1];
 
     // controller function
-    // PDControllerFcn( *m_model, q, qd, qDesired, qdDesired, qddDesired, tau, f_ext );
-    // PDWithGCControllerFcn( *m_model, q, qd, qDesired, qdDesired, qddDesired, tau, f_ext );
-    PDWithIDControllerFcn( *m_model, q, qd, qDesired, qdDesired, qddDesired, tau, f_ext );
+    controllerFcn( *m_model, q, qd, qDesired, qdDesired, qddDesired, tau, f_ext );
     
     ForwardDynamics (*m_model, q, qd, tau, qdd, &f_ext );
     dxdt[0] = qd[0]; dxdt[1] = qd[1];
@@ -179,7 +187,9 @@ int main (int argc, char* arg[]) {
   createRobotArm( L, m, gravity, robot2R);
   
 
-  DynRobotFunctor dynRobotFnc(&robot2R);
+  // Choose: qDesiredForRegulationFcn,  qDesiredForTrakingFcn
+  // Choose: PDControllerFcn, PDWithGCControllerFcn, PDWithIDControllerFcn
+  DynRobotFunctor dynRobotFnc( &robot2R, PDWithIDControllerFcn, qDesiredForTrakingFcn );
   double t = 0.0, t_init = 0.0, t_end = 10.0, dt = 0.01;
   Estado_type x(2*robot2R.dof_count);
 
