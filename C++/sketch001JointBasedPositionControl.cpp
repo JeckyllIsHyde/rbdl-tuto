@@ -1,9 +1,11 @@
 /*
   How to do: 
-  A position control for a robot2R planar
+  A position and tracking control for a robot2R planar
 
   1. PD controller
   2. PD + gravity compensation controller
+  3. PD + inverse dinamics controller
+
  */
 
 #include <iostream>
