@@ -3,6 +3,7 @@
   A position control for a robot2R planar
 
   1. PD controller
+  2. PD + gravity compensation controller
  */
 
 #include <iostream>
@@ -19,6 +20,11 @@ using namespace boost::numeric::odeint;
 
 typedef std::vector<double> Estado_type;
 
+const double h_dirac = 1e-2;
+inline double dircFcn(double t, double a) {
+  return ( std::max(0,(t-a>=0)?1:-1)
+	   -std::max(0,(t-(a+h_dirac)>=0)?1:-1) )/h_dirac;
+};
 double stepFcn(double t, double a) { return std::max(0,(t-a>=0)?1:-1); };
 double rampFcn(double t, double a) { return std::max(0.0,t-a); };
 
@@ -32,25 +38,39 @@ struct ObserverFunctor {
   };
 };
 
-void qDesiredForRegulationFcn (const double t, VectorNd& qD ) {
+void qDesiredForRegulationFcn (const double t, VectorNd& qD,
+			    VectorNd& qdD, VectorNd& qddD ) {
   double pi = M_PI;
 
   qD[0] = pi/4*stepFcn(t,0)-pi/4*stepFcn(t,2.5)+pi/4*stepFcn(t,5)-pi/4*stepFcn(t,7.5);
   qD[1] = pi/4*stepFcn(t,0)-pi/4*stepFcn(t,2.5)+pi/4*stepFcn(t,5)+pi/4*stepFcn(t,7.5);
 };
 
-void qDesiredForTrakingFcn (const double t, VectorNd& qD ) {
+void qDesiredForTrakingFcn (const double t, VectorNd& qD,
+			    VectorNd& qdD, VectorNd& qddD ) {
   double pi = M_PI;
 
   qD[0] = pi/4/2.5*rampFcn(t,0)-pi/4/1.25*rampFcn(t,2.5)
     +pi/4/1.25*rampFcn(t,5)-pi/4/1.25*rampFcn(t,7.5);
   qD[1] = pi/4/2.5*rampFcn(t,0)-pi/4/1.25*rampFcn(t,2.5)
     +pi/4/1.25*rampFcn(t,5)-pi/4/1.25*rampFcn(t,7.5);
+
+  qdD[0] = pi/4/2.5*stepFcn(t,0)-pi/4/1.25*stepFcn(t,2.5)
+    +pi/4/1.25*stepFcn(t,5)-pi/4/1.25*stepFcn(t,7.5);
+  qdD[1] = pi/4/2.5*stepFcn(t,0)-pi/4/1.25*stepFcn(t,2.5)
+    +pi/4/1.25*stepFcn(t,5)-pi/4/1.25*stepFcn(t,7.5);
+
+  qddD[0] = pi/4/2.5*dircFcn(t,0)-pi/4/1.25*dircFcn(t,2.5)
+    +pi/4/1.25*dircFcn(t,5)-pi/4/1.25*dircFcn(t,7.5);
+  qddD[1] = pi/4/2.5*dircFcn(t,0)-pi/4/1.25*dircFcn(t,2.5)
+    +pi/4/1.25*dircFcn(t,5)-pi/4/1.25*dircFcn(t,7.5);
 };
 
 void PDControllerFcn( Model& model,
 		      const VectorNd& q, const VectorNd& qd,
-		      const VectorNd& qD, VectorNd& tau ) {
+		      const VectorNd& qD, const VectorNd& qdD,const VectorNd& qddD,
+		      VectorNd& tau,
+		      std::vector<Math::SpatialVector>& f_ext ) {
   double kp = 10.0, kd = 1.0;
   tau[0] = kp*(qD[0]-q[0]) - kd*qd[0];
   tau[1] = kp*(qD[1]-q[1]) - kd*qd[1];
@@ -58,10 +78,25 @@ void PDControllerFcn( Model& model,
 
 void PDWithGCControllerFcn( Model& model,
 			    const VectorNd& q, const VectorNd& qd,
-			    const VectorNd& qD, VectorNd& tau ) {
+			    const VectorNd& qD, const VectorNd& qdD,const VectorNd& qddD,
+			    VectorNd& tau,
+			    std::vector<Math::SpatialVector>& f_ext ) {
   double kp = 10.0, kd = 1.0;
   InverseDynamics( model, q, 0*q, 0*q, tau );
   tau = kp*(qD-q) + kd*(-qd) + tau;
+}
+
+void PDWithIDControllerFcn( Model& model,
+			    const VectorNd& q, const VectorNd& qd,
+			    const VectorNd& qD, const VectorNd& qdD,const VectorNd& qddD,
+			    VectorNd& tau,
+			    std::vector<Math::SpatialVector>& f_ext ) {
+  double kp = 10.0, kd = 1.0;
+  MatrixNd H = MatrixNd::Zero ( model.dof_count,
+				model.dof_count );
+  InverseDynamics( model, q, qd, 0*q, tau, &f_ext );
+  CompositeRigidBodyAlgorithm( model, q, H, true );
+  tau = H*(kp*(qD-q) + kd*(qdD-qd) + qddD) + tau;
 }
 
 struct DynRobotFunctor {
@@ -76,24 +111,27 @@ struct DynRobotFunctor {
   void operator() (const Estado_type &x, Estado_type &dxdt, double t ) {
     q = VectorNd::Map(&x[0], m_model->dof_count);
     qd = VectorNd::Map(&x[m_model->dof_count], m_model->dof_count);
-    VectorNd qDesired(m_model->dof_count);
+
+    VectorNd zero = VectorNd::Zero (m_model->dof_count),
+      qDesired = zero, qdDesired = zero, qddDesired = zero;
 
     double pi = M_PI;
 
     //
-    qDesiredForRegulationFcn ( t, qDesired );
-    // qDesiredForTrakingFcn ( t, qDesired );
+    // qDesiredForRegulationFcn ( t, qDesired, qdDesired, qddDesired );
+    qDesiredForTrakingFcn ( t, qDesired, qdDesired, qddDesired );
       
-    // controller function
-    // PDControllerFcn( *m_model, q, qd, qDesired, tau );
-    PDWithGCControllerFcn( *m_model, q, qd, qDesired, tau );
-    
     std::vector<Math::SpatialVector> f_ext(3);
     double b = 0.1;
     f_ext[0] = f_ext[1] = f_ext[2] = SpatialVectorZero;
     f_ext[1][1] = b*(qd[1]-qd[0]);
     f_ext[2][1] = -b*qd[1];
 
+    // controller function
+    // PDControllerFcn( *m_model, q, qd, qDesired, qdDesired, qddDesired, tau, f_ext );
+    // PDWithGCControllerFcn( *m_model, q, qd, qDesired, qdDesired, qddDesired, tau, f_ext );
+    PDWithIDControllerFcn( *m_model, q, qd, qDesired, qdDesired, qddDesired, tau, f_ext );
+    
     ForwardDynamics (*m_model, q, qd, tau, qdd, &f_ext );
     dxdt[0] = qd[0]; dxdt[1] = qd[1];
     dxdt[2] = qdd[0]; dxdt[3] = qdd[1];
