@@ -31,11 +31,20 @@ struct ObserverFunctor {
   };
 };
 
-void controllerFcn( const VectorNd& q, const VectorNd& qd,
-		    const double* xDesired, VectorNd& tau ) {
+void PDControllerFcn( Model& model,
+		      const VectorNd& q, const VectorNd& qd,
+		      const VectorNd& xDesired, VectorNd& tau ) {
   double kp = 10.0, kd = 1.0;
   tau[0] = kp*(xDesired[0]-q[0]) - kd*qd[0];
   tau[1] = kp*(xDesired[1]-q[1]) - kd*qd[1];
+}
+
+void PDWithGCControllerFcn( Model& model,
+			    const VectorNd& q, const VectorNd& qd,
+			    const VectorNd& xDesired, VectorNd& tau ) {
+  double kp = 10.0, kd = 1.0;
+  InverseDynamics( model, q, 0*q, 0*q, tau );
+  tau = kp*(xDesired-q) + kd*(-qd) + tau;
 }
 
 struct DynRobotFunctor {
@@ -50,16 +59,16 @@ struct DynRobotFunctor {
   void operator() (const Estado_type &x, Estado_type &dxdt, double t ) {
     q = VectorNd::Map(&x[0], m_model->dof_count);
     qd = VectorNd::Map(&x[m_model->dof_count], m_model->dof_count);
+    VectorNd xDesired(m_model->dof_count);
 
-    double pi = M_PI, xDesired[2];
+    double pi = M_PI;
     
     xDesired[0] = pi/4*stepFcn(t,0)-pi/4*stepFcn(t,2.5)+pi/4*stepFcn(t,5)-pi/4*stepFcn(t,7.5);
     xDesired[1] = pi/4*stepFcn(t,0)-pi/4*stepFcn(t,2.5)+pi/4*stepFcn(t,5)+pi/4*stepFcn(t,7.5);
 
-    //
-    // tau[0] = kp*(xDesired[0]-q[0]) - kd*qd[0];
-    // tau[1] = kp*(xDesired[1]-q[1]) - kd*qd[1];
-    controllerFcn( q, qd, xDesired, tau );
+    // controller function
+    // PDControllerFcn( *m_model, q, qd, xDesired, tau );
+    PDWithGCControllerFcn( *m_model, q, qd, xDesired, tau );
     
     std::vector<Math::SpatialVector> f_ext(3);
     double b = 0.1;
@@ -99,7 +108,7 @@ int main (int argc, char* arg[]) {
   rbdl_check_api_version(RBDL_API_VERSION);
 
   double L[2] = {0.5, 0.3}, m[2] = {0.5, 0.3};
-  Vector3d gravity = Vector3d(0.0, 0.0, -10.0*0.0);
+  Vector3d gravity = Vector3d(0.0, 0.0, -10.0*1.0);
 
   Model robot2R;
   createRobotArm( L, m, gravity, robot2R);
