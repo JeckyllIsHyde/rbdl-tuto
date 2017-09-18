@@ -28,16 +28,6 @@ inline double dircFcn(double t, double a) {
 double stepFcn(double t, double a) { return std::max(0,(t-a>=0)?1:-1); };
 double rampFcn(double t, double a) { return std::max(0.0,t-a); };
 
-struct ObserverFunctor {
-  void operator() ( const Estado_type &x, double t ) {
-    std::cout << t << " "
-	      << x[0] << " "
-	      << x[1] << " "
-	      << x[2] << " "
-	      << x[3] << std::endl;
-  };
-};
-
 void qDesiredForRegulationFcn (const double t, VectorNd& qD,
 			    VectorNd& qdD, VectorNd& qddD ) {
   double pi = M_PI;
@@ -91,7 +81,8 @@ void PDWithIDControllerFcn( Model& model,
 			    const VectorNd& qD, const VectorNd& qdD,const VectorNd& qddD,
 			    VectorNd& tau,
 			    std::vector<Math::SpatialVector>& f_ext ) {
-  double kp = 10.0, kd = 1.0;
+  //  double kp = 10.0, kd = 1.0;
+  double kp = 39.47, kd = 12.57;
   MatrixNd H = MatrixNd::Zero ( model.dof_count,
 				model.dof_count );
   InverseDynamics( model, q, qd, 0*q, tau, &f_ext );
@@ -136,6 +127,22 @@ struct DynRobotFunctor {
     dxdt[0] = qd[0]; dxdt[1] = qd[1];
     dxdt[2] = qdd[0]; dxdt[3] = qdd[1];
   }
+};
+
+struct ObserverFunctor {
+  void operator() ( const Estado_type &x, double t ) {
+    VectorNd zero = VectorNd::Zero (2),
+      qDesired = zero, qdDesired = zero, qddDesired = zero;
+    // qDesiredForRegulationFcn( t, qDesired, qdDesired, qddDesired );
+    qDesiredForTrakingFcn( t, qDesired, qdDesired, qddDesired );
+    std::cout << t << " "
+	      << x[0] << " "
+	      << x[1] << " "
+	      << x[2] << " "
+	      << x[3] << " "
+	      << qDesired[0] << " "
+	      << qDesired[1] << std::endl;
+  };
 };
 
 void createRobotArm(const double *L, const double *m, const Vector3d& g,
