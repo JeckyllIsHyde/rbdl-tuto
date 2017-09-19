@@ -8,7 +8,7 @@ enum output_t { png=1, git };
 
 void gp_draw_init( const char* xrange = "[-1.1:1.1]",
 		   const char* yrange = "[-1.1:1.1]");
-void gp_draw_set_gif_output( const char* filename, output_t o=png );
+void gp_draw_set_output( const char* filename, output_t o=png );
 void gp_draw_init_frame( const std::string& str );
 void gp_draw_end_frame( void ) {  std::cout << std::endl; }
 void gp_draw_end( void ) { std::cout << std::endl; }
@@ -37,7 +37,7 @@ void gp_draw_init( const char* xrange, const char* yrange) {
   std::cout << "set isosamples 12" << std::endl;
 }
 
-void gp_draw_set_gif_output( const char* filename, output_t o ) {
+void gp_draw_set_output( const char* filename, output_t o ) {
   if (o==png) {
     std::cout << "set terminal pngcairo" << std::endl; 
     std::cout << "set output '" << filename << ".png'" << std::endl;
