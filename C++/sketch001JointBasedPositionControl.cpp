@@ -201,6 +201,38 @@ void InverseJacobianPDControllerFcn ( Model& model,
   tau += kp*invJp.block(0,3,2,3)*x_err;
 }
 
+void InverseJacobianPDwIDControllerFcn ( Model& model,
+				      const VectorNd& q, const VectorNd& qd,
+				      const VectorNd& xD, const VectorNd& xpD, const VectorNd& xppD,
+				      VectorNd& tau,
+				      std::vector<Math::SpatialVector>& f_ext ) {
+  MatrixNd J = MatrixNd::Zero ( 6, model.dof_count ),
+    Jp = J,
+    invJp = MatrixNd::Zero(2,3),
+    H = MatrixNd::Zero( model.dof_count, model.dof_count );
+
+  Vector3d ph( 0.3,0.0,0.0 );
+  VectorNd zero = VectorNd::Zero (model.dof_count);
+  double kp = 10.0, kd = 2.0;
+    
+  unsigned int body_2_id = model.GetBodyId( "body_2" );
+  J.setZero();
+  Vector3d Jpqd = CalcPointAcceleration( model, q, qd, zero, body_2_id, ph, true );
+  H.setZero();
+  CompositeRigidBodyAlgorithm( model, q, H, false );
+  CalcBodySpatialJacobian( model, q, body_2_id, J, false );
+  J = model.X_base[2].inverse().toMatrix()*J;
+  Vector3d p = CalcBodyToBaseCoordinates( model, q, body_2_id, ph, false );
+  Jp = Xtrans(p).toMatrix()*J;
+  invJp = (Jp.block(3,0,3,2).transpose()*Jp.block(3,0,3,2)).
+    inverse()*Jp.block(3,0,3,2).transpose();
+  Vector3d x_err = ( xD - p ),
+    xd_err = ( xpD - Jp.block(3,0,3,2)*qd ),
+    y = xppD + kp*x_err + kd*xd_err - Jpqd;
+  InverseDynamics ( model, q, qd, zero, tau, &f_ext  );
+  tau += H*(invJp*y);
+}
+
 struct ControllerFunctor {
   Model* m_model;
   void (*desiredTrayFcn)( const double, VectorNd&, VectorNd&, VectorNd& );
@@ -224,6 +256,7 @@ struct ControllerFunctor {
     VectorNd D, dD, ddD;
     // q(t) desired function
     desiredTrayFcn ( t, D, dD, ddD );
+    //    std::cout << "Hola:" << D.transpose << std::endl
     
     // controller function
     controllerFcn( *m_model, q, qd, D, dD, ddD, tau, f_ext );
@@ -318,14 +351,14 @@ int main (int argc, char* arg[]) {
   //         TransposeJacobianPControllerFcn, InverseJacobianPDControllerFcn,
   //         TransposeJacobianPDwGCControllerFcn
   DynRobotFunctor dynRobotFnc( &robot2R,
-			       TransposeJacobianPDwGCControllerFcn,
-			       xDesiredForRegulationFcn );
-  double t = 0.0, t_init = 0.0, t_end = 10.0, dt = 0.01;
+			       InverseJacobianPDwIDControllerFcn,
+			       xDesiredForTrackingFcn );
+  double t = 0.0, t_init = 0.0, t_end = 60.0, dt = 0.01;
   Estado_type x(2*robot2R.dof_count);
 
   x[0] = x[1] = x[2] = x[3] =0.0;
   x[0] = 0*M_PI/4;
-  x[1] = 0*M_PI/2;
+  x[1] = -1*M_PI/2;
 
   integrate( dynRobotFnc, x, t_init, t_end, dt, ObserverFunctor( &dynRobotFnc ) );
 
