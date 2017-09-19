@@ -126,7 +126,7 @@ void PDWithIDControllerFcn ( Model& model,
 
 void TransposeJacobianPControllerFcn ( Model& model,
 				       const VectorNd& q, const VectorNd& qd,
-				       const VectorNd& xD, const VectorNd& ,const VectorNd& ,
+				       const VectorNd& xD, const VectorNd& xdD, const VectorNd& ,
 				       VectorNd& tau,
 				       std::vector<Math::SpatialVector>& f_ext ) {
 
@@ -142,7 +142,7 @@ void TransposeJacobianPControllerFcn ( Model& model,
   CalcBodySpatialJacobian( model, q, body_2_id, J, true );
   J = model.X_base[2].inverse().toMatrix()*J;
   Vector3d p = CalcBodyToBaseCoordinates( model, q, body_2_id, ph, false ),
-    fu = kp*( xD-p );
+    fu = kp*( xdD-p );
   SpatialVector f;
   f << VectorCrossMatrix(p)*fu, fu;
   tau = J.transpose()*f;
@@ -150,7 +150,7 @@ void TransposeJacobianPControllerFcn ( Model& model,
 
 void TransposeJacobianPDwGCControllerFcn ( Model& model,
 					   const VectorNd& q, const VectorNd& qd,
-					   const VectorNd& xD, const VectorNd& ,const VectorNd& ,
+					   const VectorNd& xD, const VectorNd& xdD, const VectorNd& ,
 					   VectorNd& tau,
 					   std::vector<Math::SpatialVector>& f_ext ) {
 
@@ -167,7 +167,7 @@ void TransposeJacobianPDwGCControllerFcn ( Model& model,
   J = model.X_base[2].inverse().toMatrix()*J;
   Vector3d p = CalcBodyToBaseCoordinates( model, q, body_2_id, ph, false ),
     fu = kp*( xD-p )
-    + kd*( xD-(Xtrans(p).toMatrix()*J).block(3,0,3,2)*qd );
+    + kd*( xdD-(Xtrans(p).toMatrix()*J).block(3,0,3,2)*qd );
   SpatialVector f;
   f << VectorCrossMatrix(p)*fu, fu;
   tau = J.transpose()*f;
@@ -175,7 +175,7 @@ void TransposeJacobianPDwGCControllerFcn ( Model& model,
 
 void InverseJacobianPDControllerFcn ( Model& model,
 				      const VectorNd& q, const VectorNd& qd,
-				      const VectorNd& xD, const VectorNd& ,const VectorNd& ,
+				      const VectorNd& xD, const VectorNd& xdD, const VectorNd& ,
 				      VectorNd& tau,
 				      std::vector<Math::SpatialVector>& f_ext ) {
 
@@ -184,23 +184,20 @@ void InverseJacobianPDControllerFcn ( Model& model,
 
   Vector3d ph( 0.3,0.0,0.0 );
   VectorNd zero = VectorNd::Zero (model.dof_count);
-  double kp = 10.0, kd = 0.8;
+  double kp = 10.0, kd = 2.0;
   //  double T = 1, kp = 4*M_PI*M_PI/T, kd = 2*sqrt(kp);
 
   unsigned int body_2_id = model.GetBodyId("body_2");
   J.setZero();
   CalcBodySpatialJacobian( model, q, body_2_id, J, true );
-  J = model.X_base[2].toMatrix().inverse()*J;
+  J = model.X_base[2].inverse().toMatrix()*J;
   Vector3d p = CalcBodyToBaseCoordinates( model, q, body_2_id, ph, false ),
     x_err = ( xD-p ),
-    xd_err = ( Vector3d(0.0,0.0,0.0)-J.block(3,0,3,2)*qd ),
+    xd_err = ( xdD-J.block(3,0,3,2)*qd ),
     fu = kp*x_err + kd*xd_err;
   Jp = Xtrans(p).toMatrix()*J;
   invJp = (Jp.transpose()*Jp).inverse()*Jp.transpose();
-  SpatialVector f;
   InverseDynamics ( model, q, zero, zero, tau ); 
-  // f << VectorCrossMatrix(p)*fu, fu;
-  // tau += J.transpose()*f;
   tau += kp*invJp.block(0,3,2,3)*x_err;
 }
 
