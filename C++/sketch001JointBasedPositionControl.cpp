@@ -122,6 +122,30 @@ void PDWithIDControllerFcn ( Model& model,
   tau = H*(kp*(qD-q) + kd*(qdD-qd) + qddD) + tau;
 }
 
+void TransposeJacobianPControllerFcn ( Model& model,
+				       const VectorNd& q, const VectorNd& qd,
+				       const VectorNd& xD, const VectorNd& ,const VectorNd& ,
+				       VectorNd& tau,
+				       std::vector<Math::SpatialVector>& f_ext ) {
+
+  MatrixNd J = MatrixNd::Zero ( 6, model.dof_count ),
+    Jp = J, invJp = J;
+
+  Vector3d ph( 0.3,0.0,0.0 );
+  VectorNd zero = VectorNd::Zero (model.dof_count);
+  double kp = 10.0;
+
+  unsigned int body_2_id = model.GetBodyId("body_2");
+  J.setZero();
+  CalcBodySpatialJacobian( model, q, body_2_id, J, true );
+  J = model.X_base[2].inverse().toMatrix()*J;
+  Vector3d p = CalcBodyToBaseCoordinates( model, q, body_2_id, ph, false ),
+    fu = kp*( xD-p );
+  SpatialVector f;
+  f << VectorCrossMatrix(p)*fu, fu;
+  tau = J.transpose()*f;
+}
+
 void InverseJacobianPDControllerFcn ( Model& model,
 				      const VectorNd& q, const VectorNd& qd,
 				      const VectorNd& xD, const VectorNd& ,const VectorNd& ,
@@ -267,9 +291,9 @@ int main (int argc, char* arg[]) {
   // Choose: qDesiredForRegulationFcn,  qDesiredForTrackingFcn, xDesiredForRegulationFcn,
   //         xDesiredForTrackingFcn
   // Choose: PDControllerFcn, PDWithGCControllerFcn, PDWithIDControllerFcn,
-  //         InverseJacobianPDControllerFcn
+  //         TransposeJacobianPControllerFcn, InverseJacobianPDControllerFcn
   // DynRobotFunctor dynRobotFnc( &robot2R, PDWithIDControllerFcn, qDesiredForTrackingFcn );
-  DynRobotFunctor dynRobotFnc( &robot2R, InverseJacobianPDControllerFcn, xDesiredForRegulationFcn );
+  DynRobotFunctor dynRobotFnc( &robot2R, TransposeJacobianPControllerFcn, xDesiredForRegulationFcn );
   double t = 0.0, t_init = 0.0, t_end = 10.0, dt = 0.01;
   Estado_type x(2*robot2R.dof_count);
 
