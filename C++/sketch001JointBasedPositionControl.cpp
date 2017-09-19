@@ -96,10 +96,17 @@ void PDWithIDControllerFcn ( Model& model,
 struct ControllerFunctor {
   Model* m_model;
   void (*qDesiredFcn)( const double, VectorNd&, VectorNd&, VectorNd& );
-  
+  void (*controllerFcn)( Model&,
+			 const VectorNd&, const VectorNd&,
+			 const VectorNd&, const VectorNd&,const VectorNd&,
+			 VectorNd&,
+			 std::vector<Math::SpatialVector>& );  
   ControllerFunctor( Model* model,
+		     void (*ctrlerFcn)( Model& model, const VectorNd&, const VectorNd&,
+				      const VectorNd&, const VectorNd&, const VectorNd&,
+				      VectorNd&, std::vector<Math::SpatialVector>& ),
 		     void (*qDFcn)( const double, VectorNd&, VectorNd&, VectorNd& ) )
-    : m_model( model ), qDesiredFcn( qDFcn ) { }
+    : m_model( model ), controllerFcn( ctrlerFcn ), qDesiredFcn( qDFcn ) { }
   void operator() ( const double t, const VectorNd& q, const VectorNd& qd,
 		    std::vector<Math::SpatialVector>& f_ext,
 		    VectorNd& tau ) {
@@ -109,31 +116,21 @@ struct ControllerFunctor {
     // q(t) desired function
     qDesiredFcn ( t, qD, qdD, qddD );
     
-    double kp = 39.47, kd = 12.57;
-    MatrixNd H = MatrixNd::Zero ( m_model->dof_count,
-				  m_model->dof_count );
-    InverseDynamics( *m_model, q, qd, 0*q, tau, &f_ext );
-    CompositeRigidBodyAlgorithm( *m_model, q, H, true );
-    tau = H*(kp*(qD-q) + kd*(qdD-qd) + qddD) + tau;    
+    // controller function
+    controllerFcn( *m_model, q, qd, qD, qdD, qddD, tau, f_ext );
   };
 };
 
 struct DynRobotFunctor {
   Model* m_model;
   VectorNd q, qd, qdd, tau;
-  /*  void (*controllerFcn)( Model&,
-			 const VectorNd&, const VectorNd&,
-			 const VectorNd&, const VectorNd&,const VectorNd&,
-			 VectorNd&,
-			 std::vector<Math::SpatialVector>& );*/
-  //  void (*qDesiredFcn)( const double, VectorNd&, VectorNd&, VectorNd& );
   ControllerFunctor controllerFcntr;
   DynRobotFunctor( Model* model,
-		   /*void (*ctrlerFcn)( Model& model, const VectorNd&, const VectorNd&,
+		   void (*ctrlerFcn)( Model& model, const VectorNd&, const VectorNd&,
 				      const VectorNd&, const VectorNd&, const VectorNd&,
-				      VectorNd&, std::vector<Math::SpatialVector>&),*/
+				      VectorNd&, std::vector<Math::SpatialVector>&),
 		   void (*qDFcn)( const double, VectorNd&, VectorNd&, VectorNd& ) )
-    : m_model( model ), controllerFcntr(model, qDFcn) /*, controllerFcn( ctrlerFcn ), qDesiredFcn( qDFcn )*/ { 
+    : m_model( model ), controllerFcntr( model, ctrlerFcn, qDFcn ) { 
     q = VectorNd::Zero (model->dof_count);
     qd = VectorNd::Zero (model->dof_count);
     qdd = VectorNd::Zero (model->dof_count);
@@ -143,9 +140,6 @@ struct DynRobotFunctor {
     q = VectorNd::Map(&x[0], m_model->dof_count);
     qd = VectorNd::Map(&x[m_model->dof_count], m_model->dof_count);
 
-    //    VectorNd zero = VectorNd::Zero (m_model->dof_count),
-    //      qDesired = zero, qdDesired = zero, qddDesired = zero;
-
     // f_ext(t) desired function
     std::vector<Math::SpatialVector> f_ext(3);
     double b = 0.1;
@@ -153,9 +147,6 @@ struct DynRobotFunctor {
     f_ext[1][1] = b*(qd[1]-qd[0]);
     f_ext[2][1] = -b*qd[1];
 
-    // q(t) desired function
-    //    qDesiredFcn ( t, qDesired, qdDesired, qddDesired );
-      
     // controller function
     //    controllerFcn( *m_model, q, qd, qDesired, qdDesired, qddDesired, tau, f_ext );
     controllerFcntr( t, q, qd, f_ext, tau );
@@ -220,8 +211,7 @@ int main (int argc, char* arg[]) {
 
   // Choose: qDesiredForRegulationFcn,  qDesiredForTrakingFcn
   // Choose: PDControllerFcn, PDWithGCControllerFcn, PDWithIDControllerFcn
-  //  DynRobotFunctor dynRobotFnc( &robot2R, PDWithIDControllerFcn, qDesiredForTrakingFcn );
-   DynRobotFunctor dynRobotFnc( &robot2R, qDesiredForTrakingFcn );
+  DynRobotFunctor dynRobotFnc( &robot2R, PDWithIDControllerFcn, qDesiredForTrakingFcn );
   double t = 0.0, t_init = 0.0, t_end = 10.0, dt = 0.01;
   Estado_type x(2*robot2R.dof_count);
 
