@@ -4,7 +4,7 @@
 #include <iostream>
 #include <string>
 
-enum output_t { png=1, git };
+enum output_t { png=1, gif };
 
 void gp_draw_init( const char* xrange = "[-1.1:1.1]",
 		   const char* yrange = "[-1.1:1.1]");
@@ -41,7 +41,7 @@ void gp_draw_set_output( const char* filename, output_t o ) {
   if (o==png) {
     std::cout << "set terminal pngcairo" << std::endl; 
     std::cout << "set output '" << filename << ".png'" << std::endl;
-  } else if (o==gif)
+  } else if (o==gif) {
     std::cout << "set terminal gif animate" << std::endl; 
     std::cout << "set output '" << filename << ".gif'" << std::endl;
   }     
