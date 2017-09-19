@@ -95,7 +95,7 @@ void PDWithIDControllerFcn ( Model& model,
 
 struct ControllerFunctor {
   Model* m_model;
-  void (*qDesiredFcn)( const double, VectorNd&, VectorNd&, VectorNd& );
+  void (*desiredTrayFcn)( const double, VectorNd&, VectorNd&, VectorNd& );
   void (*controllerFcn)( Model&,
 			 const VectorNd&, const VectorNd&,
 			 const VectorNd&, const VectorNd&,const VectorNd&,
@@ -105,8 +105,8 @@ struct ControllerFunctor {
 		     void (*ctrlerFcn)( Model& model, const VectorNd&, const VectorNd&,
 				      const VectorNd&, const VectorNd&, const VectorNd&,
 				      VectorNd&, std::vector<Math::SpatialVector>& ),
-		     void (*qDFcn)( const double, VectorNd&, VectorNd&, VectorNd& ) )
-    : m_model( model ), controllerFcn( ctrlerFcn ), qDesiredFcn( qDFcn ) { }
+		     void (*dTrayFcn)( const double, VectorNd&, VectorNd&, VectorNd& ) )
+    : m_model( model ), controllerFcn( ctrlerFcn ), desiredTrayFcn( dTrayFcn ) { }
   void operator() ( const double t, const VectorNd& q, const VectorNd& qd,
 		    std::vector<Math::SpatialVector>& f_ext,
 		    VectorNd& tau ) {
@@ -114,7 +114,7 @@ struct ControllerFunctor {
     VectorNd zero = VectorNd::Zero (m_model->dof_count),
       qD = zero, qdD = zero, qddD = zero;
     // q(t) desired function
-    qDesiredFcn ( t, qD, qdD, qddD );
+    desiredTrayFcn ( t, qD, qdD, qddD );
     
     // controller function
     controllerFcn( *m_model, q, qd, qD, qdD, qddD, tau, f_ext );
@@ -129,8 +129,8 @@ struct DynRobotFunctor {
 		   void (*ctrlerFcn)( Model& model, const VectorNd&, const VectorNd&,
 				      const VectorNd&, const VectorNd&, const VectorNd&,
 				      VectorNd&, std::vector<Math::SpatialVector>&),
-		   void (*qDFcn)( const double, VectorNd&, VectorNd&, VectorNd& ) )
-    : m_model( model ), controllerFcntr( model, ctrlerFcn, qDFcn ) { 
+		   void (*dTrayFcn)( const double, VectorNd&, VectorNd&, VectorNd& ) )
+    : m_model( model ), controllerFcntr( model, ctrlerFcn, dTrayFcn ) { 
     q = VectorNd::Zero (model->dof_count);
     qd = VectorNd::Zero (model->dof_count);
     qdd = VectorNd::Zero (model->dof_count);
@@ -148,7 +148,6 @@ struct DynRobotFunctor {
     f_ext[2][1] = -b*qd[1];
 
     // controller function
-    //    controllerFcn( *m_model, q, qd, qDesired, qdDesired, qddDesired, tau, f_ext );
     controllerFcntr( t, q, qd, f_ext, tau );
     
     ForwardDynamics (*m_model, q, qd, tau, qdd, &f_ext );
@@ -163,10 +162,7 @@ struct ObserverFunctor {
   void operator() ( const Estado_type &x, double t ) {
     VectorNd zero = VectorNd::Zero (2),
       qDesired = zero, qdDesired = zero, qddDesired = zero;
-    // qDesiredForRegulationFcn( t, qDesired, qdDesired, qddDesired );
-    // qDesiredForTrakingFcn( t, qDesired, qdDesired, qddDesired );
-    // dyn_model->qDesiredFcn( t, qDesired, qdDesired, qddDesired );
-    dyn_model->controllerFcntr.qDesiredFcn( t, qDesired, qdDesired, qddDesired );
+    dyn_model->controllerFcntr.desiredTrayFcn( t, qDesired, qdDesired, qddDesired );
     std::cout << t << " "
 	      << x[0] << " "
 	      << x[1] << " "
