@@ -33,6 +33,8 @@ inline double parbFcn(double t, double a) { return rampFcn(t,a)*rampFcn(t,a); };
 
 void qDesiredForRegulationFcn (const double t, VectorNd& qD,
 			       VectorNd& qdD, VectorNd& qddD ) {
+  VectorNd zero = VectorNd::Zero ( 2/*m_model->dof_count*/ );
+  qD = qdD = qddD = zero;
   double pi = M_PI;
 
   qD[0] = pi/4*stepFcn(t,0)-pi/4*stepFcn(t,2.5)+pi/4*stepFcn(t,5)-pi/4*stepFcn(t,7.5);
@@ -165,7 +167,7 @@ void TransposeJacobianPDwGCControllerFcn ( Model& model,
   J = model.X_base[2].inverse().toMatrix()*J;
   Vector3d p = CalcBodyToBaseCoordinates( model, q, body_2_id, ph, false ),
     fu = kp*( xD-p )
-    + kd*(/*zero*/-(Xtrans(p).toMatrix()*J).block(3,0,3,2)*qd);
+    + kd*( xD-(Xtrans(p).toMatrix()*J).block(3,0,3,2)*qd );
   SpatialVector f;
   f << VectorCrossMatrix(p)*fu, fu;
   tau = J.transpose()*f;
