@@ -32,15 +32,17 @@ inline double rampFcn(double t, double a) { return std::max(0.0,t-a); };
 inline double parbFcn(double t, double a) { return rampFcn(t,a)*rampFcn(t,a); };
 
 void qDesiredForRegulationFcn (const double t, VectorNd& qD,
-			    VectorNd& qdD, VectorNd& qddD ) {
+			       VectorNd& qdD, VectorNd& qddD ) {
   double pi = M_PI;
 
   qD[0] = pi/4*stepFcn(t,0)-pi/4*stepFcn(t,2.5)+pi/4*stepFcn(t,5)-pi/4*stepFcn(t,7.5);
   qD[1] = pi/4*stepFcn(t,0)-pi/4*stepFcn(t,2.5)+pi/4*stepFcn(t,5)+pi/4*stepFcn(t,7.5);
 };
 
-void qDesiredForTrakingFcn (const double t, VectorNd& qD,
-			    VectorNd& qdD, VectorNd& qddD ) {
+void qDesiredForTrakingFcn ( const double t, VectorNd& qD,
+			     VectorNd& qdD, VectorNd& qddD ) {
+  VectorNd zero = VectorNd::Zero ( 2/*m_model->dof_count*/ );
+  qD = qdD = qddD = zero;
   double pi = M_PI;
 
   qD[0] = pi/4/2.5*rampFcn(t,0)-pi/4/1.25*rampFcn(t,2.5)
@@ -58,6 +60,33 @@ void qDesiredForTrakingFcn (const double t, VectorNd& qD,
   qddD[1] = pi/4/2.5*dircFcn(t,0)-pi/4/1.25*dircFcn(t,2.5)
     +pi/4/1.25*dircFcn(t,5)-pi/4/1.25*dircFcn(t,7.5);
 };
+
+void xDesiredForRegulationFcn( const double t, VectorNd& xD,
+				   VectorNd& xpD, VectorNd& xppD ) {
+  Vector3d p1(0.5,0.0,0.3), p2(0.5,0.0,-0.3);
+  VectorNd zero = VectorNd::Zero ( 3 );
+  xD = xpD = xppD = zero;
+  
+  double flag = 1.0;
+  
+  xD = p1*stepFcn(t,0)-flag*p1*stepFcn(t,2.5)
+    +flag*p2*stepFcn(t,2.5)-flag*p2*stepFcn(t,5)
+    +flag*p1*stepFcn(t,5)-flag*p1*stepFcn(t,7.5)
+    +flag*p2*stepFcn(t,7.5);
+
+}
+
+void xDesiredForTrackingFcn( const double t, VectorNd& xD,
+			     VectorNd& xpD, VectorNd& xppD ) {
+  VectorNd zero = VectorNd::Zero ( 3 );
+  xD = xpD = xppD = zero;
+  Vector3d pc(0.5,0.0,0.3);
+  double r = 0.2, w = 0.25;
+  
+  xD << r*sin(w*t)+pc[0], pc[1], r*cos(w*t)+pc[2];
+  xpD << w*r*cos(w*t), 0, -w*r*sin(w*t);
+  xppD << -w*w*r*sin(w*t), 0, -w*w*r*cos(w*t) ;
+}
 
 void PDControllerFcn ( Model& model,
 		       const VectorNd& q, const VectorNd& qd,
@@ -93,6 +122,37 @@ void PDWithIDControllerFcn ( Model& model,
   tau = H*(kp*(qD-q) + kd*(qdD-qd) + qddD) + tau;
 }
 
+void InverseJacobianPDControllerFcn ( Model& model,
+				      const VectorNd& q, const VectorNd& qd,
+				      const VectorNd& xD, const VectorNd& ,const VectorNd& ,
+				      VectorNd& tau,
+				      std::vector<Math::SpatialVector>& f_ext ) {
+
+  MatrixNd J = MatrixNd::Zero ( 6, model.dof_count ),
+    Jp = J, invJp = J;
+
+  Vector3d ph( 0.3,0.0,0.0 );
+  VectorNd zero = VectorNd::Zero (model.dof_count);
+  double kp = 10.0, kd = 0.8;
+  //  double T = 1, kp = 4*M_PI*M_PI/T, kd = 2*sqrt(kp);
+
+  unsigned int body_2_id = model.GetBodyId("body_2");
+  J.setZero();
+  CalcBodySpatialJacobian( model, q, body_2_id, J, true );
+  J = model.X_base[2].toMatrix().inverse()*J;
+  Vector3d p = CalcBodyToBaseCoordinates( model, q, body_2_id, ph, false ),
+    x_err = ( xD-p ),
+    xd_err = ( Vector3d(0.0,0.0,0.0)-J.block(3,0,3,2)*qd ),
+    fu = kp*x_err + kd*xd_err;
+  Jp = Xtrans(p).toMatrix()*J;
+  invJp = (Jp.transpose()*Jp).inverse()*Jp.transpose();
+  SpatialVector f;
+  InverseDynamics ( model, q, zero, zero, tau ); 
+  // f << VectorCrossMatrix(p)*fu, fu;
+  // tau += J.transpose()*f;
+  tau += kp*invJp.block(0,3,2,3)*x_err;
+}
+
 struct ControllerFunctor {
   Model* m_model;
   void (*desiredTrayFcn)( const double, VectorNd&, VectorNd&, VectorNd& );
@@ -111,13 +171,14 @@ struct ControllerFunctor {
 		    std::vector<Math::SpatialVector>& f_ext,
 		    VectorNd& tau ) {
     // qDesired, qdDesired, qddDesired, tau, f_ext
-    VectorNd zero = VectorNd::Zero (m_model->dof_count),
-      qD = zero, qdD = zero, qddD = zero;
+    //    VectorNd zero = VectorNd::Zero (m_model->dof_count),
+    //  qD = zero, qdD = zero, qddD = zero;
+    VectorNd D, dD, ddD;
     // q(t) desired function
-    desiredTrayFcn ( t, qD, qdD, qddD );
+    desiredTrayFcn ( t, D, dD, ddD );
     
     // controller function
-    controllerFcn( *m_model, q, qd, qD, qdD, qddD, tau, f_ext );
+    controllerFcn( *m_model, q, qd, D, dD, ddD, tau, f_ext );
   };
 };
 
@@ -142,7 +203,7 @@ struct DynRobotFunctor {
 
     // f_ext(t) desired function
     std::vector<Math::SpatialVector> f_ext(3);
-    double b = 0.1;
+    double b = 0.2;
     f_ext[0] = f_ext[1] = f_ext[2] = SpatialVectorZero;
     f_ext[1][1] = b*(qd[1]-qd[0]);
     f_ext[2][1] = -b*qd[1];
@@ -160,16 +221,14 @@ struct ObserverFunctor {
   DynRobotFunctor* dyn_model;
   ObserverFunctor( DynRobotFunctor* dm ) : dyn_model( dm ) { };
   void operator() ( const Estado_type &x, double t ) {
-    VectorNd zero = VectorNd::Zero (2),
-      qDesired = zero, qdDesired = zero, qddDesired = zero;
-    dyn_model->controllerFcntr.desiredTrayFcn( t, qDesired, qdDesired, qddDesired );
+    VectorNd D, dD, ddD;
+    dyn_model->controllerFcntr.desiredTrayFcn( t, D, dD, ddD );
     std::cout << t << " "
 	      << x[0] << " "
 	      << x[1] << " "
 	      << x[2] << " "
 	      << x[3] << " "
-	      << qDesired[0] << " "
-	      << qDesired[1] << std::endl;
+	      << D.transpose() << std::endl;
   };
 };
 
@@ -188,9 +247,9 @@ void createRobotArm(const double *L, const double *m, const Vector3d& g,
   Body body_1 = Body( m[0], com1, I1 ), body_2 = Body( m[1], com2, I2 );  
   
   // ensamble eslabon 1
-  body_1_id = robot.AddBody(         0, Xtrans(Vector3d(0.,0.,0.)), joint_1, body_1);
+  body_1_id = robot.AddBody(         0, Xtrans(Vector3d(0.,0.,0.)), joint_1, body_1, "body_1");
   // ensamble eslabon 1
-  body_2_id = robot.AddBody( body_1_id, Xtrans(Vector3d(L[0],0.,0.)), joint_2, body_2);
+  body_2_id = robot.AddBody( body_1_id, Xtrans(Vector3d(L[0],0.,0.)), joint_2, body_2, "body_2");
   // configurar gravedad
   robot.gravity = g;
 };
@@ -199,19 +258,25 @@ int main (int argc, char* arg[]) {
   rbdl_check_api_version(RBDL_API_VERSION);
 
   double L[2] = {0.5, 0.3}, m[2] = {0.5, 0.3};
-  Vector3d gravity = Vector3d(0.0, 0.0, -10.0*1.0);
-
+  Vector3d gravity = Vector3d(0.0, 0.0, -1.0*9.81);
+  
   Model robot2R;
   createRobotArm( L, m, gravity, robot2R);
   
 
-  // Choose: qDesiredForRegulationFcn,  qDesiredForTrakingFcn
-  // Choose: PDControllerFcn, PDWithGCControllerFcn, PDWithIDControllerFcn
-  DynRobotFunctor dynRobotFnc( &robot2R, PDWithIDControllerFcn, qDesiredForTrakingFcn );
+  // Choose: qDesiredForRegulationFcn,  qDesiredForTrakingFcn, xDesiredForRegulationFcn,
+  //         xDesiredForTrackingFcn
+  // Choose: PDControllerFcn, PDWithGCControllerFcn, PDWithIDControllerFcn,
+  //         InverseJacobianPDControllerFcn
+  // DynRobotFunctor dynRobotFnc( &robot2R, PDWithIDControllerFcn, qDesiredForTrakingFcn );
+  DynRobotFunctor dynRobotFnc( &robot2R, InverseJacobianPDControllerFcn, xDesiredForRegulationFcn );
   double t = 0.0, t_init = 0.0, t_end = 10.0, dt = 0.01;
   Estado_type x(2*robot2R.dof_count);
 
   x[0] = x[1] = x[2] = x[3] =0.0;
+  x[0] = 0*M_PI/4;
+  x[1] = 0*M_PI/2;
+
   integrate( dynRobotFnc, x, t_init, t_end, dt, ObserverFunctor( &dynRobotFnc ) );
 
   return 0;
