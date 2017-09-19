@@ -39,7 +39,7 @@ void qDesiredForRegulationFcn (const double t, VectorNd& qD,
   qD[1] = pi/4*stepFcn(t,0)-pi/4*stepFcn(t,2.5)+pi/4*stepFcn(t,5)+pi/4*stepFcn(t,7.5);
 };
 
-void qDesiredForTrakingFcn ( const double t, VectorNd& qD,
+void qDesiredForTrackingFcn ( const double t, VectorNd& qD,
 			     VectorNd& qdD, VectorNd& qddD ) {
   VectorNd zero = VectorNd::Zero ( 2/*m_model->dof_count*/ );
   qD = qdD = qddD = zero;
@@ -264,11 +264,11 @@ int main (int argc, char* arg[]) {
   createRobotArm( L, m, gravity, robot2R);
   
 
-  // Choose: qDesiredForRegulationFcn,  qDesiredForTrakingFcn, xDesiredForRegulationFcn,
+  // Choose: qDesiredForRegulationFcn,  qDesiredForTrackingFcn, xDesiredForRegulationFcn,
   //         xDesiredForTrackingFcn
   // Choose: PDControllerFcn, PDWithGCControllerFcn, PDWithIDControllerFcn,
   //         InverseJacobianPDControllerFcn
-  // DynRobotFunctor dynRobotFnc( &robot2R, PDWithIDControllerFcn, qDesiredForTrakingFcn );
+  // DynRobotFunctor dynRobotFnc( &robot2R, PDWithIDControllerFcn, qDesiredForTrackingFcn );
   DynRobotFunctor dynRobotFnc( &robot2R, InverseJacobianPDControllerFcn, xDesiredForRegulationFcn );
   double t = 0.0, t_init = 0.0, t_end = 10.0, dt = 0.01;
   Estado_type x(2*robot2R.dof_count);
