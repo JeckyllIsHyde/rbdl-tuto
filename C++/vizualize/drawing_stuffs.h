@@ -14,7 +14,7 @@ void gp_draw_end_frame( void ) {  std::cout << std::endl; }
 void gp_draw_end( void ) { std::cout << std::endl; }
 
 void gp_draw_link( double* p1, double* p2 );
-void gp_draw_point( double* p );
+void gp_draw_point( double* p, const char* c="red" );
 void gp_draw_robot2R( double* q, double* L, double* p );
 
 void gp_draw_link( double* p1, double* p2 ) {
@@ -23,8 +23,8 @@ void gp_draw_link( double* p1, double* p2 ) {
   std::cout << ",0.01*cos(t) + " << p1[0] << ", 0.01*sin(t) + " << p1[1] << " lw 5 lc 'yellow'";
 }
 
-void gp_draw_point( double* p ) {
-  std::cout << ",0.01*cos(t) + " << p[0] << ", 0.01*sin(t) + " << p[1] << " lw 5 lc 'red'";
+void gp_draw_point( double* p, const char* c ) {
+  std::cout << ",0.01*cos(t) + " << p[0] << ", 0.01*sin(t) + " << p[1] << " lw 5 lc '" << c << "'";
 }
 
 void gp_draw_init( const char* xrange, const char* yrange) {
