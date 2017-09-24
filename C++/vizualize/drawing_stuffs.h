@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
 
 enum output_t { png=1, gif };
 
@@ -16,6 +17,7 @@ void gp_draw_end( void ) { std::cout << std::endl; }
 void gp_draw_link( double* p1, double* p2 );
 void gp_draw_point( double* p, const char* c="red" );
 void gp_draw_robot2R( double* q, double* L, double* p );
+void gp_draw_robotNR( std::vector<double>& q, std::vector<double>& L, double* p );
 
 void gp_draw_link( double* p1, double* p2 ) {
   std::cout << ",(" << p2[0] << "-" << p1[0] <<")*t/7+" << p1[0]
@@ -60,6 +62,16 @@ void gp_draw_robot2R( double* q, double* L, double* p ) {
   gp_draw_link(p,b);
   gp_draw_link(b,c);
   gp_draw_point(c);
+}
+
+void gp_draw_robotNR( std::vector<double>& q, std::vector<double>& L, double* p ) {
+  double thi=0, a[2] = {p[0],p[1]};
+  for ( int i=0; i<q.size(); i++ ) {
+    double b[2] = {L[i]*cos(thi+=q[i])+a[0], L[i]*sin(thi)+a[1]};
+    gp_draw_link(a,b);
+    a[0] = b[0]; a[1] = b[1];
+  }
+  gp_draw_point(a);
 }
 
 #endif //DRAWING_STUFFS_H_
