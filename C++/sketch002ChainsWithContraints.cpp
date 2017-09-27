@@ -9,7 +9,7 @@ using namespace RigidBodyDynamics::Math;
 
 double b = 0.8;
 double t_max = 10.0;
-double dt = 0.001;
+double dt = 0.05;
 
 void tauFcn(const double t, const VectorNd& q,
 	    const VectorNd& qd, VectorNd& tau) {
@@ -24,6 +24,34 @@ void EulerCstep( Model& model, double t, double dt,
   ForwardDynamicsContactsDirect( model, q, qd, tau, CS, qdd );
   q += qd*dt;
   qd += qdd*dt;
+}
+
+void RK4Cstep( Model& model, double t, double dt,
+	      VectorNd& q, VectorNd& qd,
+	      VectorNd& tau, ConstraintSet& CS ) {
+  VectorNd qdk1 = VectorNd::Zero ( model.q_size ),
+    qdk2 = qdk1, qdk3 = qdk1, qdk4 = qdk1, qddk1 = qdk1,
+    qddk2 = qdk1, qddk3 = qdk1, qddk4 = qdk1;
+
+  // calculate k1
+  tauFcn(t, q, qd, tau);
+  qdk1 = qd;
+  ForwardDynamicsContactsDirect ( model, q, qdk1, tau, CS, qddk1 );
+  // calculate k2
+  tauFcn(t+0.5*dt, q/*+0.5*qdk1*dt*/, qd+0.5*qddk1*dt, tau);
+  qdk2 = qd+qddk1*dt/2;
+  ForwardDynamicsContactsDirect ( model, q+qdk1*dt/2, qdk2, tau, CS, qddk2 );
+  // calculate k3
+  tauFcn(t+0.5*dt, q/*+0.5*qdk2*dt*/, qd+0.5*qddk2*dt, tau);
+  qdk3 = qd+qddk2*dt/2;
+  ForwardDynamicsContactsDirect ( model, q+qdk2*dt/2, qdk3, tau, CS, qddk3 );
+  // calculate k4
+  tauFcn(t+dt, q/*+qdk3*dt*/, qd+qddk3*dt, tau);
+  qdk4 = qd+qddk3*dt;
+  ForwardDynamicsContactsDirect ( model, q+qdk3*dt, qdk4, tau, CS, qddk4 );
+  // total update
+  q += (qdk1+2*qdk2+2*qdk3+qdk4)*dt/6;
+  qd += (qddk1+2*qddk2+2*qddk3+qddk4)*dt/6;
 }
 
 int main( int argc, char* argv[] ) {
@@ -69,7 +97,8 @@ int main( int argc, char* argv[] ) {
     VectorNd d(4);
     d << t,q;
     data.push_back( d );
-    EulerCstep( model, t, dt, q, qd, tau, CS );    
+    //    EulerCstep( model, t, dt, q, qd, tau, CS );
+    RK4Cstep( model, t, dt, q, qd, tau, CS );
   }
 
   std::fstream fs;
