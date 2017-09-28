@@ -54,6 +54,24 @@ void RK4Cstep( Model& model, double t, double dt,
   qd += (qddk1+2*qddk2+2*qddk3+qddk4)*dt/6;
 }
 
+void make_four_bar( Model& model, ConstraintSet& CS ) {
+  Joint joint_rot_y ( SpatialVector (0.,1.,0.,0.,0.,0.) );
+  Body body ( 1.0, Vector3d (0.5,0.,0.),
+	      Matrix3d ( 0.1,0.,0.,
+			 0.,0.1,0.,
+			 0.,0.,0.1 ) );
+  unsigned int body_1_id = model.AddBody ( 0, Xtrans (Vector3d (0.,0.,0.)), joint_rot_y, body );
+  unsigned int body_2_id = model.AddBody ( body_1_id, Xtrans (Vector3d (1.,0.,0.)), joint_rot_y, body );
+  unsigned int body_3_id = model.AddBody ( body_2_id, Xtrans (Vector3d (1.,0.,0.)), joint_rot_y, body );
+  model.gravity = Vector3d ( 0.,0.,-9.81 );
+
+  CS.AddConstraint ( body_3_id,	Vector3d (1.,0.,0.), Vector3d (1.,0.,0.) );
+  CS.AddConstraint ( body_3_id, Vector3d (1.,0.,0.), Vector3d (0.,1.,0.) );
+  CS.AddConstraint ( body_3_id, Vector3d (1.,0.,0.), Vector3d (0.,0.,1.) );
+
+  CS.Bind( model );
+}
+
 int main( int argc, char* argv[] ) {
 
   char* filename; 
@@ -66,23 +84,9 @@ int main( int argc, char* argv[] ) {
   }
   
   Model model;
-  Joint joint_rot_y ( SpatialVector (0.,1.,0.,0.,0.,0.) );
-  Body body ( 1.0, Vector3d (0.5,0.,0.),
-	      Matrix3d ( 0.1,0.,0.,
-			 0.,0.1,0.,
-			 0.,0.,0.1 ) );
-  unsigned int body_1_id = model.AddBody ( 0, Xtrans (Vector3d (0.,0.,0.)), joint_rot_y, body );
-  unsigned int body_2_id = model.AddBody ( body_1_id, Xtrans (Vector3d (1.,0.,0.)), joint_rot_y, body );
-  unsigned int body_3_id = model.AddBody ( body_2_id, Xtrans (Vector3d (1.,0.,0.)), joint_rot_y, body );
-  model.gravity = Vector3d ( 0.,0.,-9.81 );
-
   ConstraintSet CS;
 
-  CS.AddConstraint ( body_3_id,	Vector3d (1.,0.,0.), Vector3d (1.,0.,0.) );
-  CS.AddConstraint ( body_3_id, Vector3d (1.,0.,0.), Vector3d (0.,1.,0.) );
-  CS.AddConstraint ( body_3_id, Vector3d (1.,0.,0.), Vector3d (0.,0.,1.) );
-
-  CS.Bind( model );
+  make_four_bar( model, CS );
 
   VectorNd q = VectorNd::Zero ( model.q_size ),
     qd = q, tau = q;
