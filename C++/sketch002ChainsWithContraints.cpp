@@ -13,7 +13,8 @@ double dt = 0.05;
 
 void tauFcn(const double t, const VectorNd& q,
 	    const VectorNd& qd, VectorNd& tau) {
-  tau << -b*qd[0],-b*qd[1],-b*qd[2];
+  for (int i=0;i<qd.size();i++)
+    tau[i] = -b*qd[i];
 }
 
 void EulerCstep( Model& model, double t, double dt,
@@ -72,33 +73,71 @@ void make_four_bar( Model& model, ConstraintSet& CS ) {
   CS.Bind( model );
 }
 
+void make_crank_and_slider( Model& model, ConstraintSet& CS ) {
+  Joint joint_rot_y ( SpatialVector (0.,1.,0.,0.,0.,0.) );
+  Body body ( 1.0, Vector3d (0.5,0.,0.),
+	      Matrix3d ( 0.1,0.,0.,
+			 0.,0.1,0.,
+			 0.,0.,0.1 ) );
+  unsigned int body_1_id = model.AddBody ( 0, Xtrans (Vector3d (0.,0.,0.)), joint_rot_y, body );
+  unsigned int body_2_id = model.AddBody ( body_1_id, Xtrans (Vector3d (1.,0.,0.)), joint_rot_y, body );
+  model.gravity = Vector3d ( 0.,0.,-9.81 );
+
+  CS.AddConstraint ( body_2_id,	Vector3d (1.,0.,0.), Vector3d (0.,1.,0.) );
+  CS.AddConstraint ( body_2_id, Vector3d (1.,0.,0.), Vector3d (0.,0.,1.) );
+
+  CS.Bind( model );
+}
+
+enum available_models_types { FOURBAR, CANDS } e_model_type;
+
 int main( int argc, char* argv[] ) {
 
-  char* filename; 
+  char* filename;
 
-  if ( argc > 1 )
+  if ( argc > 2 ) {
     filename = argv[1];
+    if ( strcmp(argv[2], "4bars") == 0 )
+      e_model_type = FOURBAR;
+    else if ( strcmp(argv[2], "cands") == 0 )
+      e_model_type = CANDS;
+    else {
+      std::cerr << "Usage: " << argv[0] << " filename [4bars|cands]" << std::endl;
+      exit(1);
+    }
+  }
   else {
-    std::cerr << "Usage: " << argv[0] << " filename" << std::endl;
+    std::cerr << "Usage: " << argv[0] << " filename [4bars|cands]" << std::endl;
     exit(1);
   }
   
   Model model;
   ConstraintSet CS;
 
-  make_four_bar( model, CS );
+  VectorNd q, qd, tau;
 
-  VectorNd q = VectorNd::Zero ( model.q_size ),
-    qd = q, tau = q;
-  q[0] =-1.0*M_PI/2;
-  q[1] = 1.0*M_PI/2;
-  q[2] = 0.0*M_PI;
+  if (e_model_type==FOURBAR) {
+    // Four Bar example
+    make_four_bar( model, CS );
+    q = VectorNd::Zero ( model.q_size );
+    qd = q; tau = q;
+    q[0] =-1.0*M_PI/2;
+    q[1] = 1.0*M_PI/2;
+    q[2] = 0.0*M_PI;
+  } else if (e_model_type == CANDS) {
+    // Crank and Slider example
+    make_crank_and_slider( model, CS );
+    q = VectorNd::Zero ( model.q_size );
+    qd = q; tau = q;
+    q[0] =-1.0*M_PI/4;
+    q[1] = 2.0*M_PI/4;
+  }
 
   double t;
     
   std::vector<VectorNd> data;
-  for ( t=0; t<t_max ; t+=dt ) {
-    VectorNd d(4);
+  for ( t=0; t<=t_max ; t+=dt ) {
+    VectorNd d( model.q_size+1 );
     d << t,q;
     data.push_back( d );
     //    EulerCstep( model, t, dt, q, qd, tau, CS );
