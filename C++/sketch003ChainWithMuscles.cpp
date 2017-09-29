@@ -9,7 +9,7 @@ using namespace RigidBodyDynamics::Math;
 
 double b = 0.01;
 double t_max = 10.0;
-double dt = 0.0001;
+double dt = 0.001;
 
 struct MuscleActuator {
   double k, Ln;
@@ -20,65 +20,68 @@ struct MuscleActuator {
 		  unsigned int b_1_id, unsigned int b_2_id )
     : m_model(m), p1(P1), p2(P2), body_1_id(b_1_id), body_2_id(b_2_id)
   { k=50; Ln=0.1; };
-  void operator() ( std::vector<SpatialVector>& fext,
-		    VectorNd& q, VectorNd& qd, VectorNd& tau ) {
+  void operator() ( const double t, const VectorNd& q,
+		    const VectorNd& qd, VectorNd& tau ) {
+    UpdateKinematicsCustom(*m_model,&q,NULL,NULL);
     Vector3d p10 = m_model->X_base[1].E.transpose()*p1+m_model->X_base[1].r;
     Vector3d p20 = m_model->X_base[2].E.transpose()*p2+m_model->X_base[2].r;
     Vector3d d12 = p20-p10; double id12i = d12.norm();
     Vector3d f12 = -k*d12/id12i*(id12i-Ln); // force over 2 by 1
     
-    Vector3d f21i = -m_model->X_base[1].E*f12;
-    fext[1] << VectorCrossMatrix(p1)*f21i, f21i;
+    // Vector3d f21i = -m_model->X_base[1].E*f12;
+    // fext[1] << VectorCrossMatrix(p1)*f21i, f21i;
     Vector3d f12i = m_model->X_base[2].E*f12;
-    fext[2] << VectorCrossMatrix(p2)*f12i, f12i;
-    tau[0] += fext[1][1]+fext[2][1];
-    tau[1] += fext[2][1];
+    // fext[2] << VectorCrossMatrix(p2)*f12i, f12i;
+    // tau[0] += 0*fext[1][1];
+    tau[0] = -1.*b*qd[0];
+    tau[1] = -1.*b*qd[1]+1.*(VectorCrossMatrix(p2)*f12i)[1];// fext[2][1];
   };
 };
 
-void tauFcn(const double t, const VectorNd& q,
-	    const VectorNd& qd, VectorNd& tau) {
+void tauFcn( const double t, const VectorNd& q,
+	     const VectorNd& qd, VectorNd& tau ) {
   for (int i=0;i<qd.size();i++)
-    tau[i] += -1.*b*qd[i];
+    tau[i] = -1.*b*qd[i];
 }
 
+template<typename TauFcn>
 void EulerCstep( Model& model, double t, double dt,
 		 VectorNd& q, VectorNd& qd,
-		 VectorNd& tau, ConstraintSet& CS ) {
+		 VectorNd& tau, ConstraintSet& CS, TauFcn& tauFcn ) {
   VectorNd qdd = VectorNd::Zero ( model.q_size );
-  tauFcn(t, q, qd, tau);
+  tauFcn( t, q, qd, tau );
   ForwardDynamicsContactsDirect( model, q, qd, tau, CS, qdd );
   q += qd*dt;
   qd += qdd*dt;
 }
 
+template<typename TauFcn>
 void RK4Cstep( Model& model, double t, double dt,
 	       VectorNd& q, VectorNd& qd,
-	       VectorNd& tau, ConstraintSet& CS ) {
-  VectorNd qdk1 = VectorNd::Zero ( model.q_size ), zero = qdk1,
+	       VectorNd& tau, ConstraintSet& CS, TauFcn& tauFcn ) {
+  VectorNd qdk1 = VectorNd::Zero ( model.q_size ),
     qdk2 = qdk1, qdk3 = qdk1, qdk4 = qdk1, qddk1 = qdk1,
-    qddk2 = qdk1, qddk3 = qdk1, qddk4 = qdk1, tau_tmp = zero;
+    qddk2 = qdk1, qddk3 = qdk1, qddk4 = qdk1, qdtmp;
 
   // calculate k1
-  tau_tmp = zero+tau;
-  tauFcn(t, q, qd, tau_tmp);
+  tauFcn(t, q, qd, tau);
   qdk1 = qd;
-  ForwardDynamicsContactsDirect ( model, q, qdk1, tau_tmp, CS, qddk1 );
+  ForwardDynamicsContactsDirect ( model, q, qdk1, tau, CS, qddk1 );
   // calculate k2
-  tau_tmp = zero+tau;
-  tauFcn(t+0.5*dt, q/*+0.5*qdk1*dt*/, qd+0.5*qddk1*dt, tau_tmp);
-  qdk2 = qd+qddk1*dt/2;
-  ForwardDynamicsContactsDirect ( model, q+qdk1*dt/2, qdk2, tau_tmp, CS, qddk2 );
+  qdtmp = qd+0.5*qddk1*dt;
+  tauFcn(t+0.5*dt, q/*+0.5*qdk1*dt*/, qdtmp, tau);
+  qdk2 = qdtmp;
+  ForwardDynamicsContactsDirect ( model, q+0.5*qdk1*dt, qdk2, tau, CS, qddk2 );
   // calculate k3
-  tau_tmp = zero+tau;
-  tauFcn(t+0.5*dt, q/*+0.5*qdk2*dt*/, qd+0.5*qddk2*dt, tau_tmp);
-  qdk3 = qd+qddk2*dt/2;
-  ForwardDynamicsContactsDirect ( model, q+qdk2*dt/2, qdk3, tau_tmp, CS, qddk3 );
+  qdtmp = qd+0.5*qddk2*dt;
+  tauFcn(t+0.5*dt, q/*+0.5*qdk2*dt*/, qdtmp, tau);
+  qdk3 = qdtmp;
+  ForwardDynamicsContactsDirect ( model, q+0.5*qdk2*dt, qdk3, tau, CS, qddk3 );
   // calculate k4
-  tau_tmp = zero+tau;
-  tauFcn(t+dt, q/*+qdk3*dt*/, qd+qddk3*dt, tau_tmp);
-  qdk4 = qd+qddk3*dt;
-  ForwardDynamicsContactsDirect ( model, q+qdk3*dt, qdk4, tau_tmp, CS, qddk4 );
+  qdtmp = qd+qddk3*dt;
+  tauFcn(t+dt, q/*+qdk3*dt*/, qdtmp, tau);
+  qdk4 = qdtmp;
+  ForwardDynamicsContactsDirect ( model, q+qdk3*dt, qdk4, tau, CS, qddk4 );
   // total update
   q += (qdk1+2*qdk2+2*qdk3+qdk4)*dt/6;
   qd += (qddk1+2*qddk2+2*qddk3+qddk4)*dt/6;
@@ -136,17 +139,15 @@ int main( int argc, char* argv[] ) {
 
   double t;
 
-  std::vector<SpatialVector> fext(3);
-  fext[0] = fext[1] = fext[2] = SpatialVectorZero;
   std::vector<VectorNd> data;
   for ( t=0; t<=t_max ; t+=dt ) {
     VectorNd d( model.q_size+1 );
     d << t,q;
     data.push_back( d );
-    tau = VectorNd::Zero ( model.q_size );
-    muscle( fext, q, qd, tau );
-    RK4Cstep( model, t, dt, q, qd, tau, CS );
-    //EulerCstep( model, t, dt, q, qd, tau, CS );
+    //    RK4Cstep( model, t, dt, q, qd, tau, CS, tauFcn ); // works
+    RK4Cstep( model, t, dt, q, qd, tau, CS, muscle ); // compile
+    //    EulerCstep( model, t, dt, q, qd, tau, CS, tauFcn ); // works
+    //    EulerCstep( model, t, dt, q, qd, tau, CS, muscle ); // works
   }
 
   char filename[] = "ArmWithMuscle.dat";
