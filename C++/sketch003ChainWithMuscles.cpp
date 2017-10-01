@@ -1,3 +1,13 @@
+/*
+  How to do: 
+  Introduce springs, constraints, impact and friction. 
+  Use of simple DIY ODE step solvers: Euler and RK4.
+
+  1. Introduce a spring as MuscleActuator
+  2. 
+
+ */
+
 #include <iostream>
 #include <fstream>
 #include <iomanip>
@@ -148,6 +158,7 @@ int main( int argc, char* argv[] ) {
     RK4Cstep( model, t, dt, q, qd, tau, CS, muscle ); // compile
     //    EulerCstep( model, t, dt, q, qd, tau, CS, tauFcn ); // works
     //    EulerCstep( model, t, dt, q, qd, tau, CS, muscle ); // works
+    // TODO: integrate stepper.do_step() from Odeint library
   }
 
   char filename[] = "ArmWithMuscle.dat";
