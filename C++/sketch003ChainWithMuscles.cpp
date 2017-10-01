@@ -172,5 +172,15 @@ int main( int argc, char* argv[] ) {
     fs << (*d_it).transpose() << std::endl;
   fs.close();
 
+  char filename_csv[] = "ArmWithMuscle.csv";
+  fs.open(filename_csv, std::fstream::out);
+  
+  for ( std::vector<VectorNd>::iterator d_it=data.begin();
+	d_it != data.end(); d_it++ )
+    fs << (*d_it)[0] << ", "
+       << (*d_it)[1]*180/M_PI << ", "
+       << (*d_it)[2]*180/M_PI << std::endl;
+  fs.close();
+
   return 0;
 }
