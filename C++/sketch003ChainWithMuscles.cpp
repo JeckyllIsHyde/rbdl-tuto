@@ -102,6 +102,7 @@ void RK4Cstep( Model& model, double t, double dt,
 }
 
 // controlled error-stepper
+template<typename TauFcn>
 struct DynSystem {
   typedef std::vector<VectorNd> State;
   typedef State Deriv;
@@ -109,9 +110,10 @@ struct DynSystem {
 
   Model *m_model;
   ConstraintSet *m_CS;
+  TauFcn tauFcn;
 
-  DynSystem( Model* m, ConstraintSet* cs )
-    : m_model(m), m_CS(cs) {};
+  DynSystem( Model* m, ConstraintSet* cs, TauFcn& tFcn )
+    : m_model(m), m_CS(cs), tauFcn(tFcn) {};
   
   void operator() (const State& x, State& dxdt, const Time t) {
     VectorNd tau = VectorNd::Zero(m_model->dof_count);
@@ -121,8 +123,6 @@ struct DynSystem {
     ForwardDynamicsContactsDirect ( *m_model, x[0], x[1], tau, *m_CS, dxdt[1] );
   };
 };
-
-runge_kutta4<DynSystem::State> stepper;
 
 void createRobotArm( const double *L, const double *m, const Vector3d& g,
 		     Model& robot, ConstraintSet& CS ) {
@@ -178,7 +178,8 @@ int main( int argc, char* argv[] ) {
 
   std::vector<VectorNd> data;
 
-  DynSystem dynSys(&model,&CS);
+  runge_kutta4<DynSystem<MuscleActuator>::State> stepper;
+  DynSystem<MuscleActuator> dynSys(&model, &CS, muscle);
   std::vector<VectorNd> x(2);
   for ( t=0; t<=t_max ; t+=dt ) {
     VectorNd d( model.q_size+1 );
@@ -188,7 +189,7 @@ int main( int argc, char* argv[] ) {
     //    RK4Cstep( model, t, dt, q, qd, tau, CS, muscle ); // compile
     //    EulerCstep( model, t, dt, q, qd, tau, CS, tauFcn ); // works
     //    EulerCstep( model, t, dt, q, qd, tau, CS, muscle ); // works
-    // TODO: integrate stepper.do_step() from Odeint library
+    //    Integrate stepper.do_step() from Odeint library
     x[0] = q; x[1] = qd;
     stepper.do_step( dynSys, x, t, dt );
     q = x[0]; qd = x[1];
