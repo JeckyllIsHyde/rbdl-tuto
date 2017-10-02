@@ -4,7 +4,8 @@
   Use of simple DIY ODE step solvers: Euler and RK4.
 
   1. Introduce a spring as MuscleActuator
-  2. 
+  2. Introduce an event for impact with a dense and 
+  controlled stepper
 
  */
 
@@ -13,9 +14,12 @@
 #include <iomanip>
 #include <vector>
 #include <rbdl/rbdl.h>
+#include <boost/numeric/odeint.hpp>
 
 using namespace RigidBodyDynamics;
 using namespace RigidBodyDynamics::Math;
+
+using namespace boost::numeric::odeint;
 
 double b = 0.01;
 double t_max = 10.0;
@@ -97,6 +101,29 @@ void RK4Cstep( Model& model, double t, double dt,
   qd += (qddk1+2*qddk2+2*qddk3+qddk4)*dt/6;
 }
 
+// controlled error-stepper
+struct DynSystem {
+  typedef std::vector<VectorNd> State;
+  typedef State Deriv;
+  typedef double Time;
+
+  Model *m_model;
+  ConstraintSet *m_CS;
+
+  DynSystem( Model* m, ConstraintSet* cs )
+    : m_model(m), m_CS(cs) {};
+  
+  void operator() (const State& x, State& dxdt, const Time t) {
+    VectorNd tau = VectorNd::Zero(m_model->dof_count);
+    dxdt[1] = tau;
+    tauFcn(t, x[0], x[1], tau);
+    dxdt[0] = x[1];
+    ForwardDynamicsContactsDirect ( *m_model, x[0], x[1], tau, *m_CS, dxdt[1] );
+  };
+};
+
+runge_kutta4<DynSystem::State> stepper;
+
 void createRobotArm( const double *L, const double *m, const Vector3d& g,
 		     Model& robot, ConstraintSet& CS ) {
   
@@ -150,15 +177,21 @@ int main( int argc, char* argv[] ) {
   double t;
 
   std::vector<VectorNd> data;
+
+  DynSystem dynSys(&model,&CS);
+  std::vector<VectorNd> x(2);
   for ( t=0; t<=t_max ; t+=dt ) {
     VectorNd d( model.q_size+1 );
     d << t,q;
     data.push_back( d );
     //    RK4Cstep( model, t, dt, q, qd, tau, CS, tauFcn ); // works
-    RK4Cstep( model, t, dt, q, qd, tau, CS, muscle ); // compile
+    //    RK4Cstep( model, t, dt, q, qd, tau, CS, muscle ); // compile
     //    EulerCstep( model, t, dt, q, qd, tau, CS, tauFcn ); // works
     //    EulerCstep( model, t, dt, q, qd, tau, CS, muscle ); // works
     // TODO: integrate stepper.do_step() from Odeint library
+    x[0] = q; x[1] = qd;
+    stepper.do_step( dynSys, x, t, dt );
+    q = x[0]; qd = x[1];
   }
 
   char filename[] = "ArmWithMuscle.dat";
