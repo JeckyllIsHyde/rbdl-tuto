@@ -1,0 +1,19 @@
+COLUMNS:
+Time,
+BODY:T:X,
+BODY:T:Y,
+BODY:T:Z,
+BODY:R:X,
+BODY:R:Y,
+BODY:R:Z,
+# The actual data part starts with the keyword 'DATA:'. The values are
+# separated by spaces or tabs.
+# DATA_FROM: sphere_data.csv
+# DATA:
+# 0.,  .0, 0, 1.
+# 2.5, .0, 0, 1.
+# 5.,  10., 60.
+# 7.5, 5.,  100.
+# 10., 10.,  60.
+# 12.5, 70., 30.
+# 15.,  100., 0.0
