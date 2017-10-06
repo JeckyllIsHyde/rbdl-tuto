@@ -1,13 +1,17 @@
 #include <iostream>
 #include <vector>
-#include <boost/numeric/odeint.hpp>
+//#include <boost/numeric/odeint.hpp>
 #include <rbdl/rbdl.h>
 
 using namespace RigidBodyDynamics;
 using namespace RigidBodyDynamics::Math;
 
+const double b = 0.01;
+const double dt = 0.5;
+const double t_max = 10;
+
 void createSphere( const double R, const double m, const Vector3d& g,
-		   Model& sphere ) {
+		   Model& model ) {
   
   Joint joint = Joint( JointTypeFloatingBase );
   unsigned int body_id;
@@ -17,10 +21,23 @@ void createSphere( const double R, const double m, const Vector3d& g,
   Body body = Body( m, com, I );
   
   // ensamble eslabon 1
-  body_id = robot.AddBody( 0, Xtrans(Vector3d::Zero), joint, body, "fb");
+  body_id = model.AddBody( 0, Xtrans(Vector3dZero), joint, body, "fb");
+  //  body_id = model.SetFloatingBaseBody( body ); // SetFloatingBaseBody is not implemented!!
   // configurar gravedad
-  robot.gravity = g;
+  model.gravity = g;
 }
+
+struct ActuatorFunctor {
+  
+  Model* m_model;
+
+  ActuatorFunctor(Model* m) : m_model(m) { };
+  void operator() (const double t, const VectorNd& q,
+		   const VectorNd& qd, VectorNd& tau) {
+    for (int i=0;i<qd.size();i++)
+      tau[i] = -1.*b*qd[i];
+  };
+};
 
 template<typename TauFcn>
 struct DynSystem {
@@ -29,17 +46,18 @@ struct DynSystem {
   typedef double Time;
   
   Model* m_model;
-  ConstraintSet* m_cs;
+  //ConstraintSet* m_cs;
   TauFcn& tauFcn;
 
-  DynSystem( Model* m, ConstraintSet* cs, TauFcn& tFcn )
-    : m_model(m), m_cs(cs), tauFcn(tFcn) {};
+  DynSystem( Model* m,/* ConstraintSet* cs,*/ TauFcn& tFcn )
+    : m_model(m), /*m_cs(cs),*/ tauFcn(tFcn) {};
 
   void operator() ( const State& x, State& dxdt, const Time t ) {
     VectorNd tau = VectorNd::Zero(m_model->dof_count);
     dxdt[1] = tau; // for intialization
     tauFcn( t, x[0], x[1], tau );
-    ForwardDynamicsContactsDirect( *m_model, x[0], x[1], tau, *m_cs, dxdt[1] );
+    //    ForwardDynamicsContactsDirect( *m_model, x[0], x[1], tau, *m_cs, dxdt[1] );
+    ForwardDynamics( *m_model, x[0], x[1], tau, dxdt[1] );
     dxdt[0] = x[1];
   };
 };
@@ -48,24 +66,26 @@ int main( int argc, char* argv[] ) {
 
   rbdl_check_api_version(RBDL_API_VERSION);
 
-  double R = 0.1, m = 1.;
+  double R = 0.5, m = 1.;
   Vector3d gravity = Vector3d(0.0, 0.0, -1.0*9.81);
 
   Model model;
 
-  createRobotArm( R, m, gravity, model );
+  createSphere( R, m, gravity, model );
+
+  std::cout << "dofs: " << model.dof_count << std::endl;
 
   VectorNd q, qd;
 
   q = VectorNd::Zero ( model.q_size );
   qd = q;
-  q[0] = 0.0*M_PI/4;
-  q[1] = 0.0*M_PI/4;
+  q[0] = 0.0;
+  q[1] = 0.0;
 
+  /*
   double t;
 
   typedef DynSystem<ActuatorFunctor> System;
-  //  typedef DynSystem2<ActuatorFunctor> System;
 
   typedef System::State State;
 
@@ -74,37 +94,27 @@ int main( int argc, char* argv[] ) {
   Stepper stepper;
 
   std::vector<VectorNd> data;
-  ActuatorFunctor actFcn(&model);
-  System dynSys( &model, &CS, actFcn );
+  ActuatorFunctor actFcn(&model);*/
+  //  System dynSys( &model, /*&CS,*/ actFcn );
 
   //  State x = dynSys.initState(const VectorNd& q, const VectorNd& qd);
   // VectorNd d = getDataFromStep();
-    State x(2), x_err(2);  
-    x[0] = q; x[1] = qd;
-    x_err[0] = x_err[1] = 0.0*qd;
-  /* 
-     State x(2*model.dof_count), x_err(2*model.dof_count);*/
-  for ( int i=0; i<model.dof_count; i++ ) {
-    x[i] = q[i];
-    x[i+model.dof_count] = qd[i];
-  }
+  /*
+  State x(2), x_err(2);  
+  x[0] = q; x[1] = qd;
+  x_err[0] = x_err[1] = 0.0*qd;
   for ( t=0; t<=t_max ; t+=dt ) {
     VectorNd d( model.q_size+1+model.q_size );
-    d << t, x[0], x_err[0];
-    /*
-    VectorNd d( model.q_size+1 );
-    d[0] = t;
-    for ( int i=0; i<model.dof_count; i++ )
-      d[i+1] = x[i];
-      std::cout << d.transpose() << std::endl;*/
+    d << t, x[0], x_err[0];*/
     /* // csv-file
       std::cout << d[0] << ", "
       << d[1]*180/M_PI << ", " << d[2]*180/M_PI << " "
       << d[3]*180/M_PI << ", " << d[4]*180/M_PI << " "<< std::endl;*/
+  /*
     data.push_back( d );
     //    stepper.do_step( dynSys, x, t, dt );
     stepper.do_step( dynSys, x, t, dt, x_err );
-  }
+    }*/
 
   return 0;
 }
