@@ -8,7 +8,7 @@ BODY:R:Y,
 BODY:R:Z,
 # The actual data part starts with the keyword 'DATA:'. The values are
 # separated by spaces or tabs.
-# DATA_FROM: sphere_data.csv
+DATA_FROM: sphere_data.csv
 # DATA:
 # 0.,  .0, 0, 1.
 # 2.5, .0, 0, 1.
