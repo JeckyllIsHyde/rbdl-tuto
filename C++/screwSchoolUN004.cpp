@@ -25,14 +25,17 @@ const double dt = 0.01, tmax = 5.0;
 void dynSystem( Model& model, VectorNd& q, VectorNd& qd, VectorNd& qdd  ) {
   VectorNd zero = VectorNd::Zero(model.q_size);
   VectorNd tau = zero;
-  std::vector<SpatialVector> f_ext(4,SpatialVectorZero);
-  SpatialVector v13 = ( model.X_base[0+1].inverse().toMatrix()*model.S[0+1]*qd[0] +
-			model.X_base[1+1].inverse().toMatrix()*model.S[1+1]*qd[1] +
-			model.X_base[2+1].inverse().toMatrix()*model.S[2+1]*qd[2] );
-  f_ext[3] = -b*v13;
+  // std::vector<SpatialVector> f_ext(4,SpatialVectorZero);
+  // SpatialVector v13 = ( model.X_base[0+1].inverse().toMatrix()*model.S[0+1]*qd[0] +
+  //			model.X_base[1+1].inverse().toMatrix()*model.S[1+1]*qd[1] +
+  //			model.X_base[2+1].inverse().toMatrix()*model.S[2+1]*qd[2] );
+  // f_ext[3] = -b*v13;
   // calculate forces
-  // tau = -1.0*b*qd;
-  ForwardDynamics( model, q, qd, tau, qdd, &f_ext );
+  Matrix3d S; S << ( (model.X_lambda[2+1]*model.X_lambda[1+1]).apply(model.S[0+1]) ).segment<3>(0),
+		( model.X_lambda[2+1].apply(model.S[1+1]) ).segment<3>(0),
+		( model.S[2+1] ).segment<3>(0);
+  tau = -b*S.transpose()*S*qd;
+  ForwardDynamics( model, q, qd, tau, qdd/*, &f_ext*/ );
 }
 
 void stepEuler( double dt, Model& model, VectorNd& q, VectorNd& qd ) {
