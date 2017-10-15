@@ -1,0 +1,19 @@
+COLUMNS:
+Time,
+LINK11:R:X,
+LINK11:R:Y,
+LINK11:R:Z,
+LINK12:R:X,
+LINK12:R:Y,
+LINK12:R:Z,
+LINK13:R:X,
+LINK13:R:Y,
+LINK13:R:Z,
+# The actual data part starts with the keyword 'DATA:'. The values are
+# separated by spaces or tabs.
+DATA_FROM: data/spherical_joint_data.csv
+#DATA:
+#0.,  0.0, 0.0, 0.0,
+#2.5, 90.0, 0.0, 0.0,
+#5.,  90.0, 90.0, 0.0,
+#7.5, 90.0, 90.0, 90.0,
