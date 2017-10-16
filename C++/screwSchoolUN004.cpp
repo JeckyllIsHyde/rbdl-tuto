@@ -1,4 +1,4 @@
- /*
+/*
   How to do: 
   Implement Custom Joints: Euler angles family, spherical, planar and
   floating base.
@@ -21,10 +21,16 @@ using namespace RigidBodyDynamics::Math;
 
 const double b = 0.5;
 const double dt = 0.01, tmax = 5.0;
+Vector3d fromQuaternionToZYXangles( const Quaternion& Q ) {
+  Matrix3d E = Q.toMatrix();
+  return Vector3d(std::atan2(E(0,1),E(0,0)),
+		  std::asin(-E(0,2)),
+		  std::atan2(E(1,2),E(2,2)));
+}
 
 struct dynSystem_zyx_joints {
   void operator()( Model& model, VectorNd& q, VectorNd& qd, VectorNd& qdd ) {
-    VectorNd zero = VectorNd::Zero(model.q_size);
+    VectorNd zero = VectorNd::Zero(model.qdot_size);
     VectorNd tau = zero;
     // std::vector<SpatialVector> f_ext(4,SpatialVectorZero);
     // SpatialVector v13 = ( model.X_base[0+1].inverse().toMatrix()*model.S[0+1]*qd[0] +
@@ -42,11 +48,24 @@ struct dynSystem_zyx_joints {
 
 struct dynSystem_ezyx_joint {
   void operator()( Model& model, VectorNd& q, VectorNd& qd, VectorNd& qdd ) {
-    VectorNd zero = VectorNd::Zero(model.q_size);
+    VectorNd zero = VectorNd::Zero(model.qdot_size);
     VectorNd tau = zero;
     // calculate forces
     Matrix3d S = model.multdof3_S[1].block<3,3>(0,0);
     tau = -b*S.transpose()*S*qd;
+    ForwardDynamics( model, q, qd, tau, qdd/*, &f_ext*/ );
+  }
+};
+
+struct dynSystem_s_joint {
+  Vector3d w;
+  void operator()( Model& model, VectorNd& q, VectorNd& qd, VectorNd& qdd ) {
+    VectorNd zero = VectorNd::Zero(model.qdot_size);
+    VectorNd tau = zero;
+    // calculate forces
+    Matrix3d S = model.multdof3_S[1].block<3,3>(0,0);
+    w = S*qd;
+    tau = -b*S.transpose()*w;
     ForwardDynamics( model, q, qd, tau, qdd/*, &f_ext*/ );
   }
 };
@@ -59,6 +78,26 @@ struct stepEuler {
     // make step
     dynSystem()( model, q, qd, qdd );
     q += dt*qd;
+    qd += dt*qdd;
+  };
+};
+
+template<typename dynSystem>
+struct stepEulerQuaternion {
+  void operator()( double dt, Model& model, VectorNd& q, VectorNd& qd ) {
+    VectorNd zero = VectorNd::Zero(model.qdot_size);
+    VectorNd qdd = zero;
+    // make step
+    dynSystem dynSys;
+    dynSys( model, q, qd, qdd );
+    if ( dynSys.w.squaredNorm()>0.0001 ) {
+      Quaternion Q = model.GetQuaternion( 1, q );
+      Quaternion Qw = Quaternion::fromAxisAngle(dynSys.w.normalized(), dt*dynSys.w.norm());
+      Q = Quaternion(0.5*Qw)*Q;
+      Q.normalize();
+      model.SetQuaternion( 1, Q, q );
+    }
+    // q += dt*qd;
     qd += dt*qdd;
   };
 };
@@ -127,9 +166,10 @@ int main (int argc, char* arg[]) {
   VectorNd zero = VectorNd::Zero(model0.q_size);
   VectorNd q0=zero, qd0=zero; 
   VectorNd q1=zero, qd1=zero; 
-  VectorNd q2=VectorNd::Zero(model2.q_size), qd1=zero; 
+  VectorNd q2=VectorNd::Zero(model2.q_size), qd2=zero; 
   q0 << 45.0*M_PI/180, 0.0*M_PI/180, 90.0*M_PI/180;
   q1 << q0;
+  model2.SetQuaternion( 1,Quaternion::fromZYXAngles(q0.segment<3>(0)), q2 );
 
   VectorNd d(1+model0.q_size+model0.q_size+model0.q_size);
   double t;
@@ -138,8 +178,8 @@ int main (int argc, char* arg[]) {
     //    Stepper<dynSystem_zyx_joints,stepEuler>()( dt, model0, q0, qd0 );
     Stepper<dynSystem_zyx_joints,stepOmelyanPEFRL>()( dt, model0, q0, qd0 );
     Stepper<dynSystem_ezyx_joint,stepOmelyanPEFRL>()( dt, model1, q1, qd1 );
-    // Stepper<dynSystem_ezyx_joint,stepOmelyanPEFRL>()( dt, model2, q2, qd2 );
-    d << t, q0, q1, q2;
+    Stepper<dynSystem_s_joint,stepEulerQuaternion>()( dt, model2, q2, qd2 );
+    d << t, q0, q1, fromQuaternionToZYXangles( model2.GetQuaternion( 1, q2 ) );
     std::cout << d[0] << ", ";    
     for (int j=1;j<d.size();j++)
       std::cout << 180.0/M_PI*d[j] << ", ";
