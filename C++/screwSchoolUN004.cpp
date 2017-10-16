@@ -22,7 +22,7 @@ using namespace RigidBodyDynamics::Math;
 const double b = 0.5;
 const double dt = 0.01, tmax = 5.0;
 
-struct dynSystem_xyz_joints {
+struct dynSystem_zyx_joints {
   void operator()( Model& model, VectorNd& q, VectorNd& qd, VectorNd& qdd ) {
     VectorNd zero = VectorNd::Zero(model.q_size);
     VectorNd tau = zero;
@@ -35,6 +35,17 @@ struct dynSystem_xyz_joints {
     Matrix3d S; S << ( (model.X_lambda[2+1]*model.X_lambda[1+1]).apply(model.S[0+1]) ).segment<3>(0),
 		  ( model.X_lambda[2+1].apply(model.S[1+1]) ).segment<3>(0),
 		  ( model.S[2+1] ).segment<3>(0);
+    tau = -b*S.transpose()*S*qd;
+    ForwardDynamics( model, q, qd, tau, qdd/*, &f_ext*/ );
+  }
+};
+
+struct dynSystem_ezyx_joint {
+  void operator()( Model& model, VectorNd& q, VectorNd& qd, VectorNd& qdd ) {
+    VectorNd zero = VectorNd::Zero(model.q_size);
+    VectorNd tau = zero;
+    // calculate forces
+    Matrix3d S = model.multdof3_S[1].block<3,3>(0,0);
     tau = -b*S.transpose()*S*qd;
     ForwardDynamics( model, q, qd, tau, qdd/*, &f_ext*/ );
   }
@@ -97,6 +108,8 @@ int main (int argc, char* arg[]) {
   Joint joint_rx = Joint( JointTypeRevoluteX );
   Joint joint_ry = Joint( JointTypeRevoluteY );
   Joint joint_rz = Joint( JointTypeRevoluteZ );
+  Joint joint_e = Joint( JointTypeEulerZYX );
+  Joint joint_s = Joint( JointTypeSpherical );
   // Model
   Vector3d g(0.0,0.0,-1.0*10.0);
   Model model0;
@@ -104,19 +117,29 @@ int main (int argc, char* arg[]) {
   model0.AppendBody( Xtrans(Vector3d(0.,0.,0.)), joint_ry, null_body );
   model0.AppendBody( Xtrans(Vector3d(0.,0.,0.)), joint_rx, link );
   model0.gravity = g;
-  // Speppers
+  Model model1;
+  model1.AddBody( 0, Xtrans(Vector3d(0.,0.,0.)), joint_e, link );
+  model1.gravity = g;
+  Model model2;
+  model2.AddBody( 0, Xtrans(Vector3d(0.,0.,0.)), joint_s, link );
+  model2.gravity = g;
 
   VectorNd zero = VectorNd::Zero(model0.q_size);
   VectorNd q0=zero, qd0=zero; 
+  VectorNd q1=zero, qd1=zero; 
+  VectorNd q2=VectorNd::Zero(model2.q_size), qd1=zero; 
   q0 << 45.0*M_PI/180, 0.0*M_PI/180, 90.0*M_PI/180;
+  q1 << q0;
 
   VectorNd d(1+model0.q_size+model0.q_size+model0.q_size);
   double t;
   for ( t=0; t<=tmax; t+=dt ) {
     // MODEL 0: Composite revolution ZYX joints for spherical joint
-    //    Stepper<dynSystem_xyz_joints,stepEuler>()( dt, model0, q0, qd0 );
-    Stepper<dynSystem_xyz_joints,stepOmelyanPEFRL>()( dt, model0, q0, qd0 );
-    d << t, q0, q0, q0;
+    //    Stepper<dynSystem_zyx_joints,stepEuler>()( dt, model0, q0, qd0 );
+    Stepper<dynSystem_zyx_joints,stepOmelyanPEFRL>()( dt, model0, q0, qd0 );
+    Stepper<dynSystem_ezyx_joint,stepOmelyanPEFRL>()( dt, model1, q1, qd1 );
+    // Stepper<dynSystem_ezyx_joint,stepOmelyanPEFRL>()( dt, model2, q2, qd2 );
+    d << t, q0, q1, q2;
     std::cout << d[0] << ", ";    
     for (int j=1;j<d.size();j++)
       std::cout << 180.0/M_PI*d[j] << ", ";
