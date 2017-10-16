@@ -113,7 +113,7 @@ const double Xi = -0.06626458266981849;
 template<typename dynSystem>
 struct stepOmelyanPEFRL {
   void operator()( double dt, Model& model, VectorNd& q, VectorNd& qd ) {
-    VectorNd zero = VectorNd::Zero(model.q_size);
+    VectorNd zero = VectorNd::Zero(model.qdot_size);
     VectorNd qdd = zero;
     q+=qd*(Zeta*dt); // Mueva_r(dt,Zeta);
     dynSystem()( model, q, qd, qdd ); // CalculeTodasLasFuerzas();
@@ -128,6 +128,28 @@ struct stepOmelyanPEFRL {
     dynSystem()( model, q, qd, qdd ); // CalculeTodasLasFuerzas();
     qd+=qdd*((1-2*Lambda)/2*dt); // Mueva_v(dt,(1-2*Lambda)/2);
     q+=qd*(Zeta*dt); // Mueva_r(dt,Zeta);
+  };
+};
+
+template<typename dynSystem>
+struct stepOmelyanPEFRLQuaternion {
+  void operator()( double dt, Model& model, VectorNd& q, VectorNd& qd ) {
+    VectorNd zero = VectorNd::Zero(model.qdot_size);
+    VectorNd qdd = zero;
+    dynSystem dynSys;
+    quatStep( dynSys, Zeta*dt, model, q ); // Mueva_r(dt,Zeta);
+    dynSys( model, q, qd, qdd ); // CalculeTodasLasFuerzas();
+    qd+=qdd*((1-2*Lambda)/2*dt); // Mueva_v(dt,(1-2*Lambda)/2);
+    quatStep( dynSys, Xi*dt, model, q ); // Mueva_r(dt,Xi);
+    dynSys( model, q, qd, qdd ); // CalculeTodasLasFuerzas();
+    qd+=qdd*(Lambda*dt); // Mueva_v(dt,Lambda);
+    quatStep( dynSys, (1-2*(Xi+Zeta))*dt, model, q ); // Mueva_r(dt,1-2*(Xi+Zeta));
+    dynSys( model, q, qd, qdd ); // CalculeTodasLasFuerzas();
+    qd+=qdd*(Lambda*dt); // Mueva_v(dt,Lambda);
+    quatStep( dynSys, Xi*dt, model, q ); // Mueva_r(dt,Xi);
+    dynSys( model, q, qd, qdd ); // CalculeTodasLasFuerzas();
+    qd+=qdd*((1-2*Lambda)/2*dt); // Mueva_v(dt,(1-2*Lambda)/2);
+    quatStep( dynSys, Zeta*dt, model, q ); // Mueva_r(dt,Zeta);
   };
 };
 
@@ -182,7 +204,7 @@ int main (int argc, char* arg[]) {
     //    Stepper<dynSystem_zyx_joints,stepEuler>()( dt, model0, q0, qd0 );
     Stepper<dynSystem_zyx_joints,stepOmelyanPEFRL>()( dt, model0, q0, qd0 );
     Stepper<dynSystem_ezyx_joint,stepOmelyanPEFRL>()( dt, model1, q1, qd1 );
-    Stepper<dynSystem_s_joint,stepEulerQuaternion>()( dt, model2, q2, qd2 );
+    Stepper<dynSystem_s_joint,stepOmelyanPEFRLQuaternion>()( dt, model2, q2, qd2 );
     d << t, q0, q1, fromQuaternionToZYXangles( model2.GetQuaternion( 1, q2 ) );
     std::cout << d[0] << ", ";    
     for (int j=1;j<d.size();j++)
