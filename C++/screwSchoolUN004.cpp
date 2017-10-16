@@ -83,6 +83,17 @@ struct stepEuler {
 };
 
 template<typename dynSystem>
+void quatStep(dynSystem& dynSys, double dt, Model& model, VectorNd& q ) {
+  if ( dynSys.w.squaredNorm()>0.0001 ) {
+    Quaternion Q = model.GetQuaternion( 1, q );
+    Quaternion Qw = Quaternion::fromAxisAngle(dynSys.w.normalized(), dt*dynSys.w.norm());
+    Q = Quaternion(0.5*Qw)*Q;
+    Q.normalize();
+    model.SetQuaternion( 1, Q, q );
+  }
+};
+
+template<typename dynSystem>
 struct stepEulerQuaternion {
   void operator()( double dt, Model& model, VectorNd& q, VectorNd& qd ) {
     VectorNd zero = VectorNd::Zero(model.qdot_size);
@@ -90,13 +101,7 @@ struct stepEulerQuaternion {
     // make step
     dynSystem dynSys;
     dynSys( model, q, qd, qdd );
-    if ( dynSys.w.squaredNorm()>0.0001 ) {
-      Quaternion Q = model.GetQuaternion( 1, q );
-      Quaternion Qw = Quaternion::fromAxisAngle(dynSys.w.normalized(), dt*dynSys.w.norm());
-      Q = Quaternion(0.5*Qw)*Q;
-      Q.normalize();
-      model.SetQuaternion( 1, Q, q );
-    }
+    quatStep( dynSys, dt, model, q );
     // q += dt*qd;
     qd += dt*qdd;
   };
@@ -126,7 +131,6 @@ struct stepOmelyanPEFRL {
   };
 };
 
-// OmelyanPEFRL stepper
 template<typename DynSysFcr, template<typename> typename StepFcr >
 struct Stepper {
   void operator()( double dt, Model& model, VectorNd& q, VectorNd& qd ) {
