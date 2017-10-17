@@ -83,11 +83,12 @@ struct stepEuler {
 };
 
 template<typename dynSystem>
-void quatStep(dynSystem& dynSys, double dt, Model& model, VectorNd& q ) {
+void quatStep(dynSystem& dynSys, double dt, Model& model, VectorNd& q, double c ) {
   if ( dynSys.w.squaredNorm()>0.0001 ) {
     Quaternion Q = model.GetQuaternion( 1, q );
-    Quaternion Qw = Quaternion::fromAxisAngle(dynSys.w.normalized(), dt*dynSys.w.norm());
-    Q = Quaternion(0.5*Qw)*Q;
+    Quaternion Qw = Quaternion(dynSys.w[0],dynSys.w[1],dynSys.w[2],0.0);
+    // Quaternion Qw = Quaternion::fromAxisAngle(dynSys.w.normalized(), dt*dynSys.w.norm());
+    Q += Quaternion(0.5*c*dt*Qw)*Q;
     Q.normalize();
     model.SetQuaternion( 1, Q, q );
   }
@@ -101,7 +102,7 @@ struct stepEulerQuaternion {
     // make step
     dynSystem dynSys;
     dynSys( model, q, qd, qdd );
-    quatStep( dynSys, dt, model, q );
+    quatStep( dynSys, dt, model, q, 1.0 );
     // q += dt*qd;
     qd += dt*qdd;
   };
@@ -137,19 +138,19 @@ struct stepOmelyanPEFRLQuaternion {
     VectorNd zero = VectorNd::Zero(model.qdot_size);
     VectorNd qdd = zero;
     dynSystem dynSys;
-    quatStep( dynSys, Zeta*dt, model, q ); // Mueva_r(dt,Zeta);
+    quatStep( dynSys, dt, model, q, Zeta ); // Mueva_r(dt,Zeta);
     dynSys( model, q, qd, qdd ); // CalculeTodasLasFuerzas();
     qd+=qdd*((1-2*Lambda)/2*dt); // Mueva_v(dt,(1-2*Lambda)/2);
-    quatStep( dynSys, Xi*dt, model, q ); // Mueva_r(dt,Xi);
+    quatStep( dynSys, dt, model, q, Xi ); // Mueva_r(dt,Xi);
     dynSys( model, q, qd, qdd ); // CalculeTodasLasFuerzas();
     qd+=qdd*(Lambda*dt); // Mueva_v(dt,Lambda);
-    quatStep( dynSys, (1-2*(Xi+Zeta))*dt, model, q ); // Mueva_r(dt,1-2*(Xi+Zeta));
+    quatStep( dynSys, dt, model, q, 1-2*(Xi+Zeta) ); // Mueva_r(dt,1-2*(Xi+Zeta));
     dynSys( model, q, qd, qdd ); // CalculeTodasLasFuerzas();
     qd+=qdd*(Lambda*dt); // Mueva_v(dt,Lambda);
-    quatStep( dynSys, Xi*dt, model, q ); // Mueva_r(dt,Xi);
+    quatStep( dynSys, dt, model, q, Xi ); // Mueva_r(dt,Xi);
     dynSys( model, q, qd, qdd ); // CalculeTodasLasFuerzas();
     qd+=qdd*((1-2*Lambda)/2*dt); // Mueva_v(dt,(1-2*Lambda)/2);
-    quatStep( dynSys, Zeta*dt, model, q ); // Mueva_r(dt,Zeta);
+    quatStep( dynSys, dt, model, q, Zeta ); // Mueva_r(dt,Zeta);
   };
 };
 
