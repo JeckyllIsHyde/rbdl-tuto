@@ -51,3 +51,43 @@ def QtoEulerZYX(Q):
     return np.array( [ np.arctan2(2*x*y + 2*w*z,1 - 2*y*y - 2*z*z), # thz
                        np.arcsin(-(2*x*z - 2*w*y)), # thy
                        np.arctan2(2*y*z + 2*w*x,1 - 2*x*x - 2*y*y) ] ) # thx 
+
+def get_simulation( model, dt=0.1, tmax=5.0, b=0.5 ):
+    q = np.zeros (model.q_size)
+    qd = np.zeros (model.qdot_size)
+    qdd = np.zeros (model.qdot_size)
+    tau = np.zeros (model.qdot_size)
+
+    data = np.empty((0,1+model.qdot_size))
+    if q.shape == qd.shape:
+        for t in np.arange(0.0,tmax,dt):
+            d = np.hstack([t,(180.0/np.pi*q)])
+            data = np.vstack((data,d))
+            tau = -b*qd;
+            rbdl.ForwardDynamics (model, q, qd, tau, qdd)
+            q+=qd*dt
+            qd+=qdd*dt
+    else: # for quaternions
+        q[3]=1.0
+        for t in np.arange(0.0,tmax,dt):
+            d = np.hstack([t,(180.0/np.pi*QtoEulerZYX(q))])
+            data = np.vstack((data,d))
+            tau = -b*qd;
+            rbdl.ForwardDynamics (model, q, qd, tau, qdd)
+            Q = model.GetQuaternion(1,q)
+            norm2_w = np.dot(qd,qd)
+            if norm2_w>0.0001:
+                norm_w = np.sqrt(norm2_w)
+                Qw = QfromAxisAngle(qd/norm_w,dt*norm_w)
+                Q = Qmultiply(Qw,Q)
+                Q/=np.sqrt(np.dot(Q,Q))
+            model.SetQuaternion(1,Q,q)
+            qd+=qdd*dt
+    return data
+
+data1 = get_simulation( model1, dt=0.02, tmax=5.0, b=0.5 )
+data2 = get_simulation( model2, dt=0.02, tmax=5.0, b=0.5 )
+data3 = get_simulation( model3, dt=0.02, tmax=5.0, b=0.5 )
+
+data = np.hstack([data1,data2[:,1:],data2[:,1:]])
+np.savetxt( "spherical_joint_data.csv",data,delimiter=", " )
