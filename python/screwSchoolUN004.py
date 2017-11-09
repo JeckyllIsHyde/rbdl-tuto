@@ -31,3 +31,23 @@ model3 = rbdl.Model()
 model3.AddBody(0,xtrans, joint_s, body)
 model3.gravity = np.array([0.0,0.0,-1.0*10.0])
 
+def QfromAxisAngle(v,th):
+    d = np.sqrt(np.dot(v,v))
+    s2 = np.sin(th*0.5)/d
+    return np.hstack((v*s2,np.cos(th*0.5)))
+    
+def Qmultiply(a,b) :
+    return np.array([ 
+        b[3] * a[0] + b[0] * a[3] + b[1] * a[2] - b[2] * a[1],
+        b[3] * a[1] + b[1] * a[3] + b[2] * a[0] - b[0] * a[2],
+        b[3] * a[2] + b[2] * a[3] + b[0] * a[1] - b[1] * a[0],
+        b[3] * a[3] - b[0] * a[0] - b[1] * a[1] - b[2] * a[2] ])
+
+def QtoEulerZYX(Q):
+    x = Q[0];
+    y = Q[1];
+    z = Q[2];
+    w = Q[3];
+    return np.array( [ np.arctan2(2*x*y + 2*w*z,1 - 2*y*y - 2*z*z), # thz
+                       np.arcsin(-(2*x*z - 2*w*y)), # thy
+                       np.arctan2(2*y*z + 2*w*x,1 - 2*x*x - 2*y*y) ] ) # thx 
