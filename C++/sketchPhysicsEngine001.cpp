@@ -34,7 +34,7 @@ void add_sphere_to_engine(  PhysicsEngine& engine,
   engine.systems.back()->applyGeneralizedCoordinates();
 }
 
-const int Nx = 1,Ny = 1,Nz = 1;
+const int Nx = 5,Ny = 5,Nz = 5;
 void init_engine_for_collision_spheres( PhysicsEngine& engine ) {
 
   double dx = 1.0/Nx, dy = 1.0/Ny, dz = 1.0/Nz;
@@ -61,7 +61,7 @@ int main() {
     engine.update( dt );
   }
   
-  makeAnimationFiles( engine );
+  makeAnimationFilesForOnlySpheres( engine );
 
   for ( PhysicsEngine::SysIterator sys_it=engine.systems.begin();
 	sys_it<engine.systems.end(); sys_it++ )
