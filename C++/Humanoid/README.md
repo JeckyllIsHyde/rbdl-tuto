@@ -1,0 +1,1 @@
+ An example with humanoid with ground collisions
