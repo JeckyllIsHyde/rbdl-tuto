@@ -10,6 +10,8 @@ using namespace RigidBodyDynamics::Addons;
 const double dt = 0.001;
 const double tmax = 5.0;
 
+inline Vector3d fromQuaternionToZYXangles( const Quaternion& Q );
+
 struct MechTreeSystem {
 
   typedef std::vector<SpatialVector> ForceContainer;
@@ -125,19 +127,38 @@ void MechTreeSystem::step( double dt ) {
   }
 }
 
+inline Vector3d fromQuaternionToZYXangles( const Quaternion& Q ) {
+  Matrix3d E = Q.toMatrix();
+  double q1 = atan2( -E(0,2), sqrt(E(0,1)*E(0,1)+E(0,0)*E(0,0)) );
+  return ( cos(q1)<0.0 )?
+    Vector3d( atan2(-E(0,1),-E(0,0)),
+	      q1,
+	      atan2(-E(1,2),-E(2,2)) ):
+    Vector3d( atan2(E(0,1),E(0,0)),
+	      q1,
+	      atan2(E(1,2),E(2,2)) );
+}
+
 void PhysicsEngine::printData( double t ) {
   std::string separator = ", ";
-    
-  VectorNd data( mechSys.model.qdot_size );
-  for ( int i; i<mechSys.model.mJoints.size(); i++ )
-    data[i] = mechSys.q[i];
-  /*
-    if ( model.mJoints[i].mJointType==JointTypeSpherical )
-      model.SetQuaternion( i,
-			   Quaternion::fromZYXAngles( Vector3dZero ),
-			   q );
-  */
   
+  VectorNd data( mechSys.model.qdot_size );
+  for ( int i; i<mechSys.model.mJoints.size(); i++ ) {
+    if ( mechSys.model.mJoints[i].mJointType==JointTypeSpherical ) {
+      Quaternion Q = mechSys.model.GetQuaternion( i, mechSys.q );
+      Vector3d e_zyx( fromQuaternionToZYXangles(Q) );
+      data.segment( mechSys.model.mJoints[i].q_index,
+		    mechSys.model.mJoints[i].mDoFCount ) = e_zyx;
+    } else if ( mechSys.model.mJoints[i].mDoFCount>1 )
+      data.segment( mechSys.model.mJoints[i].q_index,
+		    mechSys.model.mJoints[i].mDoFCount ) =
+	mechSys.q.segment( mechSys.model.mJoints[i].q_index,
+			   mechSys.model.mJoints[i].mDoFCount );
+    else
+      data[mechSys.model.mJoints[i].q_index] =
+	mechSys.q[mechSys.model.mJoints[i].q_index];
+  }
+
   for (int i=0; i<data.size(); i++)
     if (i<3)
       std::cout << data[i] << separator;
