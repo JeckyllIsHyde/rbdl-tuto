@@ -51,10 +51,6 @@ void init_engine_with_humanoid( PhysicsEngine& engine ) {
 
   // initialize q,qd,qdd,tau and Q
   engine.mechSys.initGeneralizedVariables();
-
-  std::cout << "q: " << engine.mechSys.q.transpose() << std::endl;
-  std::cout << "qd: " << engine.mechSys.qd.transpose() << std::endl;
-  std::cout << "qdd: " << engine.mechSys.qdd.transpose() << std::endl;
 }
 
 int main() {
