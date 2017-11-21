@@ -8,7 +8,7 @@ using namespace RigidBodyDynamics::Math;
 using namespace RigidBodyDynamics::Addons;
 
 const double dt = 0.01;
-const double tmax = 0.5;
+const double tmax = 0.2;
 
 inline Vector3d fromQuaternionToZYXangles( const Quaternion& Q );
 
@@ -152,7 +152,7 @@ void PhysicsEngine::printData( double t ) {
   std::string separator = ", ";
   
   VectorNd data( mechSys.model.qdot_size );
-  for ( int i; i<mechSys.model.mJoints.size(); i++ ) {
+  for ( int i=0; i<mechSys.model.mJoints.size(); i++ ) {
     if ( mechSys.model.mJoints[i].mJointType==JointTypeSpherical ) {
       Quaternion Q = mechSys.model.GetQuaternion( i, mechSys.q );
       Vector3d e_zyx( fromQuaternionToZYXangles(Q) );
