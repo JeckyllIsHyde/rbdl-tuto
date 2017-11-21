@@ -16,16 +16,17 @@ struct PhysicsEngine {
 };
 
 void init_engine_with_humanoid( PhysicsEngine& engine ) {
-  std::cout << "Simulator!!!" << std::endl;
-  Model human;
 
-  LuaModelReadFromFile("ModelHuman.lua", &human, true);
+  Model* human = &(engine.mechSys.model);
 
-  for (int id=0; id<human.mBodies.size(); id++)
-    if (human.mBodies[id].mMass==0.0)
-      human.mBodies[id].mIsVirtual = true;
-  
-  std::cout << "human q size: " << human.q_size <<  std::endl;
+  // read lua file
+  LuaModelReadFromFile( "ModelHuman.lua", human, true );
+
+  // add virtual bodies for any mass==0.0
+  for (int id=0; id<human->mBodies.size(); id++)
+    if (human->mBodies[id].mMass==0.0)
+      human->mBodies[id].mIsVirtual = true;
+
 }
 
 int main() {
