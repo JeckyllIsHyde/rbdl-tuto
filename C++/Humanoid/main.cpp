@@ -87,7 +87,7 @@ void MechTreeSystem::initGeneralizedVariables() {
 		       q );
   */
 
-  for ( int i; i<model.mJoints.size(); i++ )
+  for ( int i=0; i<model.mJoints.size(); i++ )
     if ( model.mJoints[i].mJointType==JointTypeSpherical )
       model.SetQuaternion( i,
 			   Quaternion::fromZYXAngles( Vector3dZero ),
