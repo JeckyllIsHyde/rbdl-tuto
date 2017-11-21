@@ -1,6 +1,18 @@
+joints = {
+  j_spherical = { "JointTypeSpherical" },
+  --j_spherical = { "JointTypeEulerZYX" },
+}
+
 model = {
+  configuration = {
+    axis_front = { 1, 0, 0 },
+    axis_up    = { 0, 0, 1 },
+    axis_right = { 0, -1, 0 },
+    rotation_order = { 1, 2, 0},
+  },
   gravity = {0.0,0.0,-10.0},
   frames = {
+  
     {
       name = "virtual_pelvis",
       parent = "ROOT",
@@ -9,6 +21,7 @@ model = {
       },
       joint = {"JointTypeTranslationXYZ"},
     },
+    
     {
       name = "pelvis",
       parent = "virtual_pelvis",
@@ -21,7 +34,7 @@ model = {
 	  {0.0,0.0,0.1},
 	},
       },
-      joint = {"JointTypeSpherical"},
+      joint = joints.j_spherical,
       joint_frame = {
         r = {0.0,0.0,0.0},
 	E = {
@@ -30,7 +43,16 @@ model = {
 	  {0.0,0.0,1.0},
 	},
       },
+      visuals = {
+        {
+	  color = { 0.8,0.8,0.2 },
+	  geometry = {
+	    sphere = { radius=0.1 },
+	  }
+	},
+      },
     },
+    
   },
 }
 

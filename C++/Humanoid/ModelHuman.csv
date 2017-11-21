@@ -1,0 +1,13 @@
+COLUMNS:
+Time,
+# Free body pelvis 6dofs
+virtual_pelvis:T:X
+virtual_pelvis:T:Y
+virtual_pelvis:T:Z
+pelvis:R:Z
+pelvis:R:Y
+pelvis:R:X
+# The actual data part starts with the keyword 'DATA:'. The values are
+# separated by spaces or tabs.
+DATA_FROM: ModelHuman_data.csv
+# DATA:
