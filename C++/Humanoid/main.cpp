@@ -8,7 +8,7 @@ using namespace RigidBodyDynamics::Math;
 using namespace RigidBodyDynamics::Addons;
 
 const double dt = 0.001;
-const double tmax = 5.0;
+const double tmax = 0.5;
 
 inline Vector3d fromQuaternionToZYXangles( const Quaternion& Q );
 
@@ -21,6 +21,7 @@ struct MechTreeSystem {
   ForceContainer f_ext;
 
   void initGeneralizedVariables();
+  void applyGeneralizedCoordinates();
   void forwardDynamics();
   void step( double dt );
 };
@@ -40,7 +41,7 @@ void init_engine_with_humanoid( PhysicsEngine& engine ) {
   Model* human = &(engine.mechSys.model);
 
   // read lua file
-  LuaModelReadFromFile( "ModelHuman.lua", human, true );
+  LuaModelReadFromFile( "ModelHuman.lua", human/*, true*/ );
 
   // add virtual bodies for any mass==0.0
   for (int id=0; id<human->mBodies.size(); id++)
@@ -49,6 +50,12 @@ void init_engine_with_humanoid( PhysicsEngine& engine ) {
 
   // initialize q,qd,qdd,tau and Q
   engine.mechSys.initGeneralizedVariables();
+
+  // manual dof initialization
+  engine.mechSys.q[2] = 1.0; // z-axis height
+
+  // apply initial contitions to model struct
+  engine.mechSys.applyGeneralizedCoordinates();
 }
 
 int main() {
@@ -127,6 +134,10 @@ void MechTreeSystem::step( double dt ) {
   }
 }
 
+void MechTreeSystem::applyGeneralizedCoordinates() {
+  UpdateKinematicsCustom( model,&q,&qd,NULL );
+}
+
 inline Vector3d fromQuaternionToZYXangles( const Quaternion& Q ) {
   Matrix3d E = Q.toMatrix();
   double q1 = atan2( -E(0,2), sqrt(E(0,1)*E(0,1)+E(0,0)*E(0,0)) );
@@ -159,6 +170,7 @@ void PhysicsEngine::printData( double t ) {
 	mechSys.q[mechSys.model.mJoints[i].q_index];
   }
 
+  std::cout << t << separator;
   for (int i=0; i<data.size(); i++)
     if (i<3)
       std::cout << data[i] << separator;
