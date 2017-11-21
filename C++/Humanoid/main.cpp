@@ -67,12 +67,10 @@ int main() {
 
   // simulate
   double t;
-  for ( t=0; t<=tmax; t+=dt ) {
-    engine.printData( t );
+  for ( t=0; t<=tmax+dt; t+=dt ) {
     engine.update( dt );
+    engine.printData( t );
   }
-  // final state
-  engine.printData( t );
   
   return 0;
 }
