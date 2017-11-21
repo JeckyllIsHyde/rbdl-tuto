@@ -7,13 +7,20 @@ using namespace RigidBodyDynamics;
 using namespace RigidBodyDynamics::Math;
 
 const double b = 0.01;
-const double dt = 0.5;
+const double dt = 0.1;
 const double t_max = 10;
 
 void createSphere( const double R, const double m, const Vector3d& g,
 		   Model& model ) {
   
-  Joint joint = Joint( JointTypeFloatingBase );
+Joint joint(
+	    SpatialVector (0., 0., 0., 1., 0., 0.),
+	    SpatialVector (0., 0., 0., 0., 1., 0.),
+	    SpatialVector (0., 0., 0., 0., 0., 1.),
+	    SpatialVector (0., 1., 0., 0., 0., 0.),
+	    SpatialVector (0., 0., 1., 0., 0., 0.),
+	    SpatialVector (1., 0., 0., 0., 0., 0.)
+	    );
   unsigned int body_id;
   Vector3d com(0.0,0.0,0.0);
   Matrix3d I = Matrix3dZero;
@@ -73,32 +80,38 @@ int main( int argc, char* argv[] ) {
 
   createSphere( R, m, gravity, model );
 
-  std::cout << "dofs: " << model.dof_count << std::endl;
-
-  VectorNd q, qd;
+  VectorNd q, qd, qdd, tau;
 
   q = VectorNd::Zero ( model.q_size );
-  qd = q;
-  q[0] = 0.0;
-  q[1] = 0.0;
+  qdd = qd = tau = q;
+  q[0] = 0.0;  q[1] = 0.0;  q[2] = 1.0;
+  q[3] = 0.0*M_PI/4;  q[4] = 1.0*M_PI/2;  q[5] = 0.0*M_PI/4;
 
-  /*
   double t;
+  VectorNd d( model.dof_count+1 );
+  for ( t=0; t<=0.5/*t_max*/; t+=dt ) {
 
+    if (q[2]-x)
+    tau[2] = ;
+    
+    ForwardDynamics( model, q, qd, tau, qdd );
+
+    q += dt*qd; 
+    qd += dt*qdd;
+    d << t,q;
+    for (int j=0; j<d.size(); j++) std::cout << d[j] << ", "; std::cout << std::endl;
+  }
+  
+  /*
   typedef DynSystem<ActuatorFunctor> System;
-
   typedef System::State State;
-
   typedef runge_kutta_dopri5<State> Stepper; // Error Stepper
-
   Stepper stepper;
 
   std::vector<VectorNd> data;
   ActuatorFunctor actFcn(&model);*/
   //  System dynSys( &model, /*&CS,*/ actFcn );
 
-  //  State x = dynSys.initState(const VectorNd& q, const VectorNd& qd);
-  // VectorNd d = getDataFromStep();
   /*
   State x(2), x_err(2);  
   x[0] = q; x[1] = qd;

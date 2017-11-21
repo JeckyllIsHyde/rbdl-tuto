@@ -11,6 +11,6 @@ struct PhysicsEngine;
 
 std::string addSphereToCsvFile( std::string BODYName );
 std::string addSphereToLuaFile( std::string BODYName, Vector3d pos );
-void makeAnimationFiles( PhysicsEngine& engine );  
+void makeAnimationFilesForOnlySpheres( PhysicsEngine& engine );  
 
 #endif // ANIMATION_H

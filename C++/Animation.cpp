@@ -5,7 +5,7 @@
 
 #include "PhysicsEngine.h"
 
-void makeAnimationFiles( PhysicsEngine& engine ) {
+void makeAnimationFilesForOnlySpheres( PhysicsEngine& engine ) {
   std::string head_code = ""
     "meshes = {\n"
     "  SphereBody = {\n"
