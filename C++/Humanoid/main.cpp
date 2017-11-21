@@ -19,10 +19,8 @@ struct MechTreeSystem {
   ForceContainer f_ext;
 
   void initGeneralizedVariables();
-  void forwardDynamics() {
-    ForwardDynamics( model, q, qd, tau, qdd, &f_ext );
-  }
-
+  void forwardDynamics();
+  void step( double dt );
 };
 
 struct PhysicsEngine {
@@ -35,6 +33,7 @@ struct PhysicsEngine {
   }
   void update( double dt ) {
     mechSys.forwardDynamics();
+    mechSys.step( dt );
   }
 };
 
@@ -100,4 +99,36 @@ void MechTreeSystem::initGeneralizedVariables() {
 
 void MechTreeSystem::forwardDynamics() {
   ForwardDynamics( model, q, qd, tau, qdd, &f_ext );
+}
+
+void MechTreeSystem::step( double dt ) {
+  if (model.q_size != model.qdot_size) {
+    for (unsigned int i=1;i<model.mJoints.size();i++) {
+      unsigned int q_index = model.mJoints[i].q_index;
+      if (model.mJoints[i].mJointType == JointTypeSpherical) {
+	Matrix3d S = model.multdof3_S[i].block<3,3>(0,0);
+	Vector3d w = S*Vector3d(qd[q_index+0],
+				qd[q_index+1],
+				qd[q_index+2]);
+	if ( w.squaredNorm()>0.0001 ) {
+	  Quaternion Q = model.GetQuaternion( i, q );
+	  Quaternion Qw = Quaternion(w[0],w[1],w[2],0.0);
+	  // Quaternion Qw = Quaternion::fromAxisAngle(w.normalized(), dt*w.norm());
+	  Q += Quaternion(0.5*dt*Qw)*Q;
+	  Q.normalize();
+	  model.SetQuaternion(i,Q,q);
+	}
+      } else if (model.mJoints[i].mJointType == JointTypeTranslationXYZ) {
+	q[q_index+0] += dt*qd[q_index+0];
+	q[q_index+1] += dt*qd[q_index+1];
+	q[q_index+2] += dt*qd[q_index+2];
+      } else {
+	q[q_index] += dt*qd[q_index];
+      }
+    }
+    qd += dt*qdd;
+  } else {
+    q += dt*qd;
+    qd += dt*qdd;
+  }
 }
