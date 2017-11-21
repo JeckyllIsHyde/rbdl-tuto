@@ -19,13 +19,23 @@ struct MechTreeSystem {
   ForceContainer f_ext;
 
   void initGeneralizedVariables();
+  void forwardDynamics() {
+    ForwardDynamics( model, q, qd, tau, qdd, &f_ext );
+  }
+
 };
 
 struct PhysicsEngine {
   MechTreeSystem mechSys;
   
-  void printData( double t ) {}
-  void update( double dt ) {}
+  void printData( double t ) {
+    std::cout << "q: " << mechSys.q.transpose() << std::endl;
+    std::cout << "qd: " << mechSys.qd.transpose() << std::endl;
+    std::cout << "qdd: " << mechSys.qdd.transpose() << std::endl;
+  }
+  void update( double dt ) {
+    mechSys.forwardDynamics();
+  }
 };
 
 void init_engine_with_humanoid( PhysicsEngine& engine ) {
@@ -86,4 +96,8 @@ void MechTreeSystem::initGeneralizedVariables() {
 			   q );
 
   f_ext = ForceContainer( model.mBodies.size(), SpatialVectorZero );
+}
+
+void MechTreeSystem::forwardDynamics() {
+  ForwardDynamics( model, q, qd, tau, qdd, &f_ext );
 }
