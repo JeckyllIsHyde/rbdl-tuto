@@ -7,7 +7,7 @@ using namespace RigidBodyDynamics;
 using namespace RigidBodyDynamics::Math;
 using namespace RigidBodyDynamics::Addons;
 
-const double dt = 0.001;
+const double dt = 0.01;
 const double tmax = 0.5;
 
 inline Vector3d fromQuaternionToZYXangles( const Quaternion& Q );
@@ -68,8 +68,8 @@ int main() {
   // simulate
   double t;
   for ( t=0; t<=tmax+dt; t+=dt ) {
-    engine.update( dt );
     engine.printData( t );
+    engine.update( dt );
   }
   
   return 0;
