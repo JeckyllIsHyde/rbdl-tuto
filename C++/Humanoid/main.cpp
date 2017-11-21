@@ -26,11 +26,7 @@ struct MechTreeSystem {
 struct PhysicsEngine {
   MechTreeSystem mechSys;
   
-  void printData( double t ) {
-    std::cout << "q: " << mechSys.q.transpose() << std::endl;
-    std::cout << "qd: " << mechSys.qd.transpose() << std::endl;
-    std::cout << "qdd: " << mechSys.qdd.transpose() << std::endl;
-  }
+  void printData( double t );
   void update( double dt ) {
     mechSys.forwardDynamics();
     mechSys.step( dt );
@@ -84,7 +80,7 @@ void MechTreeSystem::initGeneralizedVariables() {
 		       q );
   */
 
-  for ( int i; i<model.mBodies.size(); i++ )
+  for ( int i; i<model.mJoints.size(); i++ )
     if ( model.mJoints[i].mJointType==JointTypeSpherical )
       model.SetQuaternion( i,
 			   Quaternion::fromZYXAngles( Vector3dZero ),
@@ -127,4 +123,25 @@ void MechTreeSystem::step( double dt ) {
     q += dt*qd;
     qd += dt*qdd;
   }
+}
+
+void PhysicsEngine::printData( double t ) {
+  std::string separator = ", ";
+    
+  VectorNd data( mechSys.model.qdot_size );
+  for ( int i; i<mechSys.model.mJoints.size(); i++ )
+    data[i] = mechSys.q[i];
+  /*
+    if ( model.mJoints[i].mJointType==JointTypeSpherical )
+      model.SetQuaternion( i,
+			   Quaternion::fromZYXAngles( Vector3dZero ),
+			   q );
+  */
+  
+  for (int i=0; i<data.size(); i++)
+    if (i<3)
+      std::cout << data[i] << separator;
+    else
+      std::cout << 180.0/M_PI*data[i] << separator;
+  std::cout << std::endl;
 }
