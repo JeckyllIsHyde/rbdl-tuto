@@ -101,9 +101,18 @@ void init_engine_with_humanoid( PhysicsEngine& engine ) {
   engine.mechSys.qd[5] = 1.0; // x-axis angular velocity
 
   // create spheres for system collision
+  // pelvis
   engine.spheres.push_back( Sphere( Vector3d( 0.0, 0.0, 0.0 ),
 				    0.1) );
   engine.spheres.back().bind( &(engine.mechSys), pelvis_id );
+  engine.spheres.push_back( Sphere( Vector3d( 0.0,-0.1, 0.0 ),
+				    0.05) );
+  engine.spheres.back().bind( &(engine.mechSys), pelvis_id );
+  // thigh_r
+  unsigned int thigh_r_id = engine.mechSys.model.GetBodyId( "thigh_r" );
+  engine.spheres.push_back( Sphere( Vector3d( 0.0, 0.0,-0.4 ),
+				    0.05) );
+  engine.spheres.back().bind( &(engine.mechSys), thigh_r_id );
   
   // apply initial contitions to model struct
   engine.mechSys.applyGeneralizedCoordinates();
