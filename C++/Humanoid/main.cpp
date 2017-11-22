@@ -37,6 +37,7 @@ struct MechTreeSystem {
   void applyGeneralizedCoordinates();
   void forwardDynamics();
   void step( double dt );
+  inline void set_zero( ForceContainer &spatial_values );
 };
 
 struct PhysicsEngine {
@@ -50,10 +51,7 @@ struct PhysicsEngine {
 
   PhysicsEngine();
   void printData( double t );
-  void update( double dt ) {
-    mechSys.forwardDynamics();
-    mechSys.step( dt );
-  }
+  void update( double dt );
 };
 
 void init_engine_with_humanoid( PhysicsEngine& engine ) {
@@ -95,6 +93,12 @@ void init_engine_with_humanoid( PhysicsEngine& engine ) {
   //  engine.mechSys.qd[4] = 1.0; // y-axis angular velocity
   engine.mechSys.qd[5] = 1.0; // x-axis angular velocity
 
+  // create spheres for system collision
+  unsigned int pelvis_id = engine.mechSys.model.GetBodyId( "pelvis" );
+  engine.spheres.push_back( Sphere( Vector3d( 0.0, 0.0, 0.0 ),
+				    0.1) );
+  engine.spheres.back().bind( &(engine.mechSys), pelvis_id );
+  
   // apply initial contitions to model struct
   engine.mechSys.applyGeneralizedCoordinates();
 }
@@ -185,6 +189,11 @@ void MechTreeSystem::applyGeneralizedCoordinates() {
   UpdateKinematicsCustom( model,&q,&qd,NULL );
 }
 
+inline void MechTreeSystem::set_zero( ForceContainer &spatial_values ) {
+  for (unsigned int i = 0; i < spatial_values.size(); i++)
+    spatial_values[i].setZero();
+}
+
 inline Vector3d fromQuaternionToZYXangles( const Quaternion& Q ) {
   Matrix3d E = Q.toMatrix();
   double q1 = atan2( -E(0,2), sqrt(E(0,1)*E(0,1)+E(0,0)*E(0,0)) );
@@ -242,4 +251,27 @@ void PhysicsEngine::printData( double t ) {
     else
       std::cout << 180.0/M_PI*data[i] << separator;
   std::cout << std::endl;
+}
+
+void PhysicsEngine::update( double dt ) {
+  // 1. reset loads: forces and torques
+  mechSys.tau=VectorNd::Zero( mechSys.tau.size() );
+  mechSys.set_zero( mechSys.f_ext) ;
+  for ( SphereIterator e_it=spheres.begin();
+	e_it<spheres.end(); e_it++ )
+    e_it->clearLoad();
+  for ( SphereIterator e_it=walls.begin();
+	e_it<walls.end(); e_it++ )
+    e_it->clearLoad();
+  // 2. apply loads and in between bodies
+  int i,j;
+  for( i=0;i<spheres.size();i++ ) {
+    for ( j=i+1;j<spheres.size();j++ )
+      loadByJOnI( spheres[i],spheres[j] );
+    for ( j=0;j<walls.size();j++ )
+      loadByJOnI( spheres[i],walls[j] );
+  }
+
+  mechSys.forwardDynamics();
+  mechSys.step( dt );
 }
