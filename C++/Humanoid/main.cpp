@@ -27,8 +27,14 @@ struct MechTreeSystem {
 };
 
 struct PhysicsEngine {
+
+  typedef std::vector<Sphere> SphereContainer;
+  typedef SphereContainer::iterator SphereIterator;
+
   MechTreeSystem mechSys;
-  
+  SphereContainer spheres;
+  SphereContainer walls;
+
   void printData( double t );
   void update( double dt ) {
     mechSys.forwardDynamics();
