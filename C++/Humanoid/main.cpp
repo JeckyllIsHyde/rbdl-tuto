@@ -52,7 +52,28 @@ void init_engine_with_humanoid( PhysicsEngine& engine ) {
   engine.mechSys.initGeneralizedVariables();
 
   // manual dof initialization
+  //  engine.mechSys.q[0] = 1.0; // x-axis height
+  //  engine.mechSys.q[1] = 1.0; // y-axis height
   engine.mechSys.q[2] = 1.0; // z-axis height
+
+  Vector3d ori( 0.0, 1.0*M_PI/3, 0.0); // body orientation
+  if ( engine.mechSys.model.
+       mJoints[engine.mechSys.model.
+	       GetBodyId( "pelvis" )].mJointType ==
+       JointTypeSpherical )
+    engine.mechSys.
+      model.SetQuaternion( engine.mechSys.model.GetBodyId( "pelvis" ),
+			   Quaternion::fromZYXAngles( ori ),
+			   engine.mechSys.q );
+  else
+    engine.mechSys.q.segment<3>(3) = ori;
+
+  engine.mechSys.qd[0] = 1.0; // x-axis linear velocity
+  //  engine.mechSys.qd[1] = 1.0; // y-axis linear velocity
+  engine.mechSys.qd[2] = 1.0; // z-axis linear velocity
+  //  engine.mechSys.qd[3] = 1.0; // z-axis angular velocity
+  //  engine.mechSys.qd[4] = 1.0; // y-axis angular velocity
+  engine.mechSys.qd[5] = 1.0; // x-axis angular velocity
 
   // apply initial contitions to model struct
   engine.mechSys.applyGeneralizedCoordinates();
@@ -107,20 +128,20 @@ void MechTreeSystem::step( double dt ) {
       if (model.mJoints[i].mJointType == JointTypeSpherical) {
 	Matrix3d S = model.multdof3_S[i].block<3,3>(0,0);
 	Vector3d w = S*Vector3d(qd[q_index+0],
-				qd[q_index+1],
-				qd[q_index+2]);
+				    qd[q_index+1],
+				    qd[q_index+2]);
 	if ( w.squaredNorm()>0.0001 ) {
 	  Quaternion Q = model.GetQuaternion( i, q );
 	  Quaternion Qw = Quaternion(w[0],w[1],w[2],0.0);
-	  // Quaternion Qw = Quaternion::fromAxisAngle(w.normalized(), dt*w.norm());
 	  Q += Quaternion(0.5*dt*Qw)*Q;
+	  // Quaternion Qw = Quaternion::fromAxisAngle(w.normalized(), dt*w.norm());
+	  // Q = Q*Qw;
 	  Q.normalize();
 	  model.SetQuaternion(i,Q,q);
 	}
-      } else if (model.mJoints[i].mJointType == JointTypeTranslationXYZ) {
-	q[q_index+0] += dt*qd[q_index+0];
-	q[q_index+1] += dt*qd[q_index+1];
-	q[q_index+2] += dt*qd[q_index+2];
+      } else if ( model.mJoints[i].mDoFCount > 1 ) {
+	for ( int idof=0; idof<model.mJoints[i].mDoFCount; idof++ )
+	  q[q_index+idof] += dt*qd[q_index+idof];
       } else {
 	q[q_index] += dt*qd[q_index];
       }
