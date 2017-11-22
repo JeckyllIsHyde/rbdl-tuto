@@ -52,7 +52,52 @@ model = {
 	},
       },
     },
-    
+
+    {
+      name = "thigh_r",
+      parent = "pelvis",
+      body = {
+        mass = 1.0,
+	com = {0.0,0.0,-0.2},
+	iniertia = {
+	  {0.1,0.0,0.0},
+	  {0.0,0.1,0.0},
+	  {0.0,0.0,0.1},
+	},
+      },
+      joint = joints.j_spherical,
+      joint_frame = {
+        r = {0.0,-0.1,0.0},
+	E = {
+	  {1.0,0.0,0.0},
+	  {0.0,1.0,0.0},
+	  {0.0,0.0,1.0},
+	},
+      },
+      visuals = {
+        {
+	  color = { 0.8,0.8,0.2 },
+	  translate = { 0.0,0.0,-0.2 },
+	  geometry = {
+	    sphere = { radius=0.05 },
+	  },
+	},
+        {
+	  color = { 0.2,0.8,0.2 },
+	  geometry = {
+	    sphere = { radius=0.05 },
+	  },
+	},
+        {
+	  color = { 0.2,0.8,0.2 },
+	  translate = { 0.0,0.0,-0.4 },
+	  geometry = {
+	    sphere = { radius=0.05 },
+	  },
+	},
+      },
+    },
+
   },
 }
 
