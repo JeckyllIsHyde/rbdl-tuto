@@ -90,6 +90,7 @@ void init_engine_with_humanoid( PhysicsEngine& engine ) {
   unsigned int thigh_l_id = human->GetBodyId( "thigh_l" );
   unsigned int shank_l_id = human->GetBodyId( "shank_l" );
   unsigned int foot_l_id = human->GetBodyId( "foot_l" );
+  unsigned int middle_trunk_id = human->GetBodyId( "middle_trunk" );
   //  engine.mechSys.q[0] = 1.0; // x-axis height
   //  engine.mechSys.q[1] = 1.0; // y-axis height
   engine.mechSys.q[2] = 1.0; // z-axis height
@@ -143,17 +144,17 @@ void init_engine_with_humanoid( PhysicsEngine& engine ) {
 
   // LEFT LEG
   engine.spheres.push_back( Sphere( Vector3d( 0.0, 0.0872, 0.0 ),
-				    0.05) ); // hip_r
+				    0.05) ); // hip_l
   engine.spheres.back().bind( &(engine.mechSys), pelvis_id );
-  // thigh_r
+  // thigh_l
   engine.spheres.push_back( Sphere( Vector3d( 0.0, 0.0,-0.4222 ),
 				    0.05) ); // knee
   engine.spheres.back().bind( &(engine.mechSys), thigh_l_id );
-  // shank_r
+  // shank_l
   engine.spheres.push_back( Sphere( Vector3d( 0.0, 0.0,-0.4403 ),
 				    0.05) ); // ankle
   engine.spheres.back().bind( &(engine.mechSys), shank_l_id );
-  // foot_r
+  // foot_l
   engine.spheres.push_back( Sphere( Vector3d( -0.01, 0.0,-0.06195 ),
 				    0.04185) ); // heel 
   engine.spheres.back().bind( &(engine.mechSys), foot_l_id );
@@ -163,6 +164,10 @@ void init_engine_with_humanoid( PhysicsEngine& engine ) {
   engine.spheres.push_back( Sphere( Vector3d( 0.1870,-0.05,-0.0787 ),
 				    0.025) ); // hallux
   engine.spheres.back().bind( &(engine.mechSys), foot_l_id );
+  // TRUNK
+  engine.spheres.push_back( Sphere( Vector3d( 0.0, 0.0, 0.1457 ),
+				    0.08) ); // spine joint
+  engine.spheres.back().bind( &(engine.mechSys), middle_trunk_id );
 
   // apply initial contitions to model struct
   engine.mechSys.applyGeneralizedCoordinates();

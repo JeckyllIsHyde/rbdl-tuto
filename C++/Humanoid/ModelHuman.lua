@@ -124,8 +124,8 @@ bodies = {
 }
 
 joints = {
-  j_spherical = { "JointTypeSpherical" },
-  --j_spherical = { "JointTypeEulerZYX" },
+  --j_spherical = { "JointTypeSpherical" },
+  j_spherical = { "JointTypeEulerZYX" },
   j_translationXYZ = { "JointTypeTranslationXYZ" },
   j_rot_yz = {
     { 0., 1., 0., 0., 0., 0.},
@@ -163,7 +163,7 @@ model = {
       joint = joints.j_spherical,
       visuals = {-- pelvis com
         {
-	  color = { 0.8,0.8,0.2 },
+	  color = { 0.8,0.2,0.8 },
 	  translate = coms.pelvis,
 	  geometry = {
 	    sphere = { radius=0.07 },
@@ -363,6 +363,32 @@ model = {
 	  translate = { 0.1870,-0.05,-0.0787 },
 	  geometry = {
 	    sphere = { radius=0.025 },
+	  },
+	},
+      },
+    },
+
+    { --- TRUNK
+      name = "middle_trunk",
+      parent = "pelvis",
+      body = bodies.middle_trunk,
+      joint = joints.j_spherical,
+      joint_frame = {
+        r = { 0.0, 0.0, lengths.pelvis },
+      },
+      visuals = {
+        {
+	  color = { 0.8,0.8,0.2 },
+	  translate = coms.middle_trunk,
+	  geometry = {
+	    sphere = { radius=0.07 },
+	  },
+	},
+        {-- spine joint
+	  color = { 0.2,0.8,0.8 },
+	  translate = { 0.0,0.0,lengths.pelvis },
+	  geometry = {
+	    sphere = { radius=0.08 },
 	  },
 	},
       },

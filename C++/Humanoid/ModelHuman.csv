@@ -19,6 +19,10 @@ thigh_l:R:Y
 thigh_l:R:X
 shank_l:R:Y
 foot_l:R:Y
+# TRUNK
+middle_trunk:R:Z
+middle_trunk:R:Y
+middle_trunk:R:X
 # The actual data part starts with the keyword 'DATA:'. The values are
 # separated by spaces or tabs.
 DATA_FROM: ModelHuman_data.csv
