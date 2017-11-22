@@ -79,6 +79,9 @@ void init_engine_with_humanoid( PhysicsEngine& engine ) {
 
   // manual dof initialization
   unsigned int pelvis_id = engine.mechSys.model.GetBodyId( "pelvis" );
+  unsigned int thigh_r_id = engine.mechSys.model.GetBodyId( "thigh_r" );
+  unsigned int shank_r_id = engine.mechSys.model.GetBodyId( "shank_r" );
+  unsigned int foot_r_id = engine.mechSys.model.GetBodyId( "foot_r" );
   //  engine.mechSys.q[0] = 1.0; // x-axis height
   //  engine.mechSys.q[1] = 1.0; // y-axis height
   engine.mechSys.q[2] = 1.0; // z-axis height
@@ -109,11 +112,24 @@ void init_engine_with_humanoid( PhysicsEngine& engine ) {
 				    0.05) );
   engine.spheres.back().bind( &(engine.mechSys), pelvis_id );
   // thigh_r
-  unsigned int thigh_r_id = engine.mechSys.model.GetBodyId( "thigh_r" );
   engine.spheres.push_back( Sphere( Vector3d( 0.0, 0.0,-0.4 ),
 				    0.05) );
   engine.spheres.back().bind( &(engine.mechSys), thigh_r_id );
-  
+  // shank_r
+  engine.spheres.push_back( Sphere( Vector3d( 0.0, 0.0,-0.36 ),
+				    0.05) );
+  engine.spheres.back().bind( &(engine.mechSys), shank_r_id );
+  // foot_r
+  engine.spheres.push_back( Sphere( Vector3d( 0.01, 0.0,-0.1 ),
+				    0.01) );
+  engine.spheres.back().bind( &(engine.mechSys), foot_r_id );
+  engine.spheres.push_back( Sphere( Vector3d( 0.2,-0.03,-0.1 ),
+				    0.01) );
+  engine.spheres.back().bind( &(engine.mechSys), foot_r_id );
+  engine.spheres.push_back( Sphere( Vector3d( 0.2, 0.03,-0.1 ),
+				    0.01) );
+  engine.spheres.back().bind( &(engine.mechSys), foot_r_id );
+
   // apply initial contitions to model struct
   engine.mechSys.applyGeneralizedCoordinates();
 }
