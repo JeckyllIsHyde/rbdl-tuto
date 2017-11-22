@@ -7,8 +7,10 @@ using namespace RigidBodyDynamics;
 using namespace RigidBodyDynamics::Math;
 using namespace RigidBodyDynamics::Addons;
 
-const double dt = 0.01;
-const double tmax = 0.2;
+const double dt = 0.0001;
+const double tmax = 5.0;
+
+const double K = 1.e4;
 
 inline Vector3d fromQuaternionToZYXangles( const Quaternion& Q );
 
@@ -24,6 +26,8 @@ struct Sphere {
   Sphere( Vector3d p, double r );
   void bind( MechTreeSystem* mts, unsigned int id );
   void clearLoad();
+  Vector3d globalPosition();
+  void applyLoad( Vector3d p );
 };
 
 struct MechTreeSystem {
@@ -89,7 +93,7 @@ void init_engine_with_humanoid( PhysicsEngine& engine ) {
     engine.mechSys.q.segment<3>(3) = ori;
 
   engine.mechSys.qd[0] = 1.0; // x-axis linear velocity
-  //  engine.mechSys.qd[1] = 1.0; // y-axis linear velocity
+  engine.mechSys.qd[1] = 0.5; // y-axis linear velocity
   engine.mechSys.qd[2] = 1.0; // z-axis linear velocity
   //  engine.mechSys.qd[3] = 1.0; // z-axis angular velocity
   //  engine.mechSys.qd[4] = 1.0; // y-axis angular velocity
@@ -133,6 +137,22 @@ void Sphere::bind( MechTreeSystem* mts, unsigned int id ) {
 void Sphere::clearLoad() {
   f=Vector3dZero;
   tau=Vector3dZero;
+}
+
+Vector3d Sphere::globalPosition() {
+  if (sys_pt==NULL)
+    return pos;
+  return Vector3d( sys_pt->model.X_base[b_id].E.transpose()*pos
+		   +sys_pt->model.X_base[b_id].r );
+}
+
+void Sphere::applyLoad( Vector3d p ){
+  if (sys_pt==NULL)
+    return;
+  // apply on f_ext
+  SpatialVector f_tmp;
+  f_tmp << VectorCrossMatrix( p )*f,f; 
+  sys_pt->f_ext[b_id] += f_tmp; 
 }
 
 void MechTreeSystem::initGeneralizedVariables() {
