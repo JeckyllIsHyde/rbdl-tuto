@@ -27,7 +27,7 @@ model = {
       parent = "virtual_pelvis",
       body = {
         mass = 1.0,
-	com = {0.5,0.0,0.0},
+	com = {0.0,0.0,0.0},
 	iniertia = {
 	  {0.1,0.0,0.0},
 	  {0.0,0.1,0.0},
