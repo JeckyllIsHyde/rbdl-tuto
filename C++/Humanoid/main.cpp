@@ -78,16 +78,16 @@ void init_engine_with_humanoid( PhysicsEngine& engine ) {
   engine.mechSys.initGeneralizedVariables();
 
   // manual dof initialization
-  unsigned int pelvis_id = engine.mechSys.model.GetBodyId( "pelvis" );
-  unsigned int thigh_r_id = engine.mechSys.model.GetBodyId( "thigh_r" );
-  unsigned int shank_r_id = engine.mechSys.model.GetBodyId( "shank_r" );
-  unsigned int foot_r_id = engine.mechSys.model.GetBodyId( "foot_r" );
+  unsigned int pelvis_id = human->GetBodyId( "pelvis" );
+  unsigned int thigh_r_id = human->GetBodyId( "thigh_r" );
+  unsigned int shank_r_id = human->GetBodyId( "shank_r" );
+  unsigned int foot_r_id = human->GetBodyId( "foot_r" );
   //  engine.mechSys.q[0] = 1.0; // x-axis height
   //  engine.mechSys.q[1] = 1.0; // y-axis height
   engine.mechSys.q[2] = 1.0; // z-axis height
 
   Vector3d ori( 0.0, 1.0*M_PI/3, 0.0); // body orientation
-  if ( engine.mechSys.model.mJoints[pelvis_id].mJointType ==
+  if ( human->mJoints[pelvis_id].mJointType ==
        JointTypeSpherical )
     engine.mechSys.
       model.SetQuaternion( pelvis_id,
@@ -106,7 +106,7 @@ void init_engine_with_humanoid( PhysicsEngine& engine ) {
   // create spheres for system collision
   Vector3d com;
   // pelvis
-  com = engine.mechSys.model.mBodies[pelvis_id].mCenterOfMass;
+  com = human->mBodies[pelvis_id].mCenterOfMass;
   engine.spheres.push_back( Sphere( com, 0.07) ); // pelvis com
   engine.spheres.back().bind( &(engine.mechSys), pelvis_id );
   engine.spheres.push_back( Sphere( Vector3d( 0.0,-0.0872, 0.0 ),
