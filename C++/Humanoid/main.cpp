@@ -21,13 +21,8 @@ struct Sphere {
   MechTreeSystem* sys_pt;
   unsigned int b_id;
 
-  Sphere( Vector3d p, double r )
-    : pos(p), f(Vector3dZero), tau(Vector3dZero),
-      R(r), sys_pt(NULL), b_id(0) { }
-
-  void bind( MechTreeSystem* mts, unsigned int id ) {
-    sys_pt=mts; b_id=id;
-  }
+  Sphere( Vector3d p, double r );
+  void bind( MechTreeSystem* mts, unsigned int id );
 };
 
 struct MechTreeSystem {
@@ -53,6 +48,7 @@ struct PhysicsEngine {
   SphereContainer spheres;
   SphereContainer walls;
 
+  PhysicsEngine();
   void printData( double t );
   void update( double dt ) {
     mechSys.forwardDynamics();
@@ -199,6 +195,24 @@ inline Vector3d fromQuaternionToZYXangles( const Quaternion& Q ) {
     Vector3d( atan2(E(0,1),E(0,0)),
 	      q1,
 	      atan2(E(1,2),E(2,2)) );
+}
+
+PhysicsEngine::PhysicsEngine() {
+  // walls
+  double L = 2.0, bigR = 1e6;
+  double bottom_plane = 0.0, left_plane = -L/2, back_plane = -L/2;
+  Sphere bottom(Vector3d(0.,0.,bottom_plane-bigR), bigR); 
+  walls.push_back( bottom ); // bottom plane
+  Sphere left(Vector3d(left_plane-bigR,0.,0.), bigR); 
+  walls.push_back( left ); // left plane
+  Sphere back(Vector3d(0.,back_plane-bigR,0.), bigR);
+  walls.push_back( back ); // back plan
+  Sphere up(Vector3d(0.,0.,bottom_plane+L+bigR), bigR); 
+  walls.push_back( up ); // up plane
+  Sphere right(Vector3d(L+left_plane+bigR,0.,0.), bigR); 
+  walls.push_back( right ); // right plane
+  Sphere front(Vector3d(0.,L+back_plane+bigR,0.), bigR);
+  walls.push_back( front ); // front plane
 }
 
 void PhysicsEngine::printData( double t ) {
