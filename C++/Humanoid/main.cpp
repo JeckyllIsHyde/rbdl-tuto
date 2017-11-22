@@ -20,6 +20,14 @@ struct Sphere {
   double R;
   MechTreeSystem* sys_pt;
   unsigned int b_id;
+
+  Sphere( Vector3d p, double r )
+    : pos(p), f(Vector3dZero), tau(Vector3dZero),
+      R(r), sys_pt(NULL), b_id(0) { }
+
+  void bind( MechTreeSystem* mts, unsigned int id ) {
+    sys_pt=mts; b_id=id;
+  }
 };
 
 struct MechTreeSystem {
@@ -110,6 +118,14 @@ int main() {
   }
   
   return 0;
+}
+
+Sphere::Sphere( Vector3d p, double r )
+  : pos(p), f(Vector3dZero), tau(Vector3dZero),
+    R(r), sys_pt(NULL), b_id(0) { }
+
+void Sphere::bind( MechTreeSystem* mts, unsigned int id ) {
+  sys_pt=mts; b_id=id;
 }
 
 void MechTreeSystem::initGeneralizedVariables() {
