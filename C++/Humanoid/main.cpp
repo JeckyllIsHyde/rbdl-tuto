@@ -23,6 +23,7 @@ struct Sphere {
 
   Sphere( Vector3d p, double r );
   void bind( MechTreeSystem* mts, unsigned int id );
+  void clearLoad();
 };
 
 struct MechTreeSystem {
@@ -52,6 +53,7 @@ struct PhysicsEngine {
   PhysicsEngine();
   void printData( double t );
   void update( double dt );
+  void loadByJOnI( Sphere& s1, Sphere& s2 );
 };
 
 void init_engine_with_humanoid( PhysicsEngine& engine ) {
@@ -126,6 +128,11 @@ Sphere::Sphere( Vector3d p, double r )
 
 void Sphere::bind( MechTreeSystem* mts, unsigned int id ) {
   sys_pt=mts; b_id=id;
+}
+
+void Sphere::clearLoad() {
+  f=Vector3dZero;
+  tau=Vector3dZero;
 }
 
 void MechTreeSystem::initGeneralizedVariables() {
@@ -274,4 +281,34 @@ void PhysicsEngine::update( double dt ) {
 
   mechSys.forwardDynamics();
   mechSys.step( dt );
+}
+
+void PhysicsEngine::loadByJOnI( Sphere& s1, Sphere& s2 ) {
+  Vector3d F2, Fn, r21, n, vc,
+    gP2 = s2.globalPosition(),
+    gP1 = s1.globalPosition(),
+    gPc;
+  double d21, s, Fn_n,
+    m12= 0.5*1/*m1*m2/(m1+m2)*/;
+  r21= gP2-gP1;
+  d21 = r21.norm();
+  s = (s1.R+s2.R)-d21;
+  if (s>0) {
+    // geometria y dinamica del contacto
+    n = r21/d21;
+    // calcular velocidad de contacto y el vector tangente
+    gPc = gP1+r21*(s1.R/d21);
+      
+    // fuerzas normales
+    // Fn: fuerza de Hertz
+    Fn_n = K*pow(s,1.5);
+    Fn = n*Fn_n;
+
+    // construir fuerza total
+    F2 = Fn;
+    s2.f = F2;
+    s1.f =(-F2);
+    s1.applyLoad( gPc );
+    s2.applyLoad( gPc );
+  }
 }
