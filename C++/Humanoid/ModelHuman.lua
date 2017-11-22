@@ -1,7 +1,140 @@
+lengths = {
+  pelvis = 0.1457,
+  thigh = 0.4222,
+  shank = 0.4403,
+  foot = 0.1037,
+  middle_trunk = 0.2155,
+  upper_trunk = 0.2421,
+  upper_arm = 0.2817,
+  lower_arm = 0.2689,
+  hand = 0.0862,
+  head = 0.2429,
+}
+
+masses = {
+  pelvis = 0.8154,
+  thigh = 10.3368,
+  shank = 3.1609,
+  foot = 1.001,
+  middle_trunk = 16.33,
+  upper_trunk = 15.96,
+  upper_arm = 1.9783,
+  lower_arm = 1.1826,
+  hand = 0.4453,
+  head = 5.0662,
+}
+
+coms = {
+  pelvis = { 0., 0.,  0.0891},
+  thigh = { 0., 0., -0.1729},
+  shank = { 0., 0., -0.1963},
+  foot = { 0.1254, 0., -0.0516},
+  middle_trunk = { 0., 0.,  0.1185},
+  upper_trunk = { 0., 0.,  0.1195},
+  upper_arm = { 0., 0., -0.1626},
+  lower_arm = { 0., 0., -0.1230},
+  hand = { 0., 0., -0.0680},
+  head = { 0., 0.,  1.1214}
+}
+
+inertias = {
+  pelvis = {--- 0.0897, 0.0855, 0.0803
+    {0.0897*0.0897*lengths.pelvis*lengths.pelvis*masses.pelvis,0.0,0.0},
+    {0.0,0.0855*0.0855*lengths.pelvis*lengths.pelvis*masses.pelvis,0.0},
+    {0.0,0.0,0.0803*0.0803*lengths.pelvis*lengths.pelvis*masses.pelvis},
+  },
+  thigh = {--- 0.1389, 0.0629, 0.1389
+    {0.1389*0.1389*lengths.thigh*lengths.thigh*masses.thigh,0.0,0.0},
+    {0.0,0.0629*0.0629*lengths.thigh*lengths.thigh*masses.thigh,0.0},
+    {0.0,0.0,0.1389*0.1389*lengths.thigh*lengths.thigh*masses.thigh},
+  },
+  shank = {--- 0.1123, 0.0454, 0.1096
+    {0.1123*0.1123*lengths.shank*lengths.shank*masses.shank,0.0,0.0},
+    {0.0,0.0454*0.0454*lengths.shank*lengths.shank*masses.shank,0.0},
+    {0.0,0.0,0.1096*0.1096*lengths.shank*lengths.shank*masses.shank},
+  },
+  foot = {--- 0.0267, 0.0129, 0.0254
+    {0.0267*0.0267*lengths.foot*lengths.foot*masses.foot,0.0,0.0},
+    {0.0,0.0129*0.0129*lengths.foot*lengths.foot*masses.foot,0.0},
+    {0.0,0.0,0.0254*0.0254*lengths.foot*lengths.foot*masses.foot},
+  },
+  middle_trunk = {--- 0.0970, 0.1009, 0.0825
+    {0.0970*0.0970*lengths.middle_trunk*lengths.middle_trunk*masses.middle_trunk,0.0,0.0},
+    {0.0,0.1009*0.1009*lengths.middle_trunk*lengths.middle_trunk*masses.middle_trunk,0.0},
+    {0.0,0.0,0.0825*0.0825*lengths.middle_trunk*lengths.middle_trunk*masses.middle_trunk},
+  },
+  upper_trunk = {--- 0.1273, 0.1172, 0.0807
+    {0.1273*0.1273*lengths.upper_trunk*lengths.upper_trunk*masses.upper_trunk,0.0,0.0},
+    {0.0,0.1172*0.1172*lengths.upper_trunk*lengths.upper_trunk*masses.upper_trunk,0.0},
+    {0.0,0.0,0.0807*0.0807*lengths.upper_trunk*lengths.upper_trunk*masses.upper_trunk},
+  },
+  upper_arm = {--- 0.0803, 0.0758, 0.0445
+    {0.0803*0.0803*lengths.upper_arm*lengths.upper_arm*masses.upper_arm,0.0,0.0},
+    {0.0,0.0758*0.0758*lengths.upper_arm*lengths.upper_arm*masses.upper_arm,0.0},
+    {0.0,0.0,0.0445*0.0445*lengths.upper_arm*lengths.upper_arm*masses.upper_arm},
+  },
+  lower_arm = {--- 0.0742, 0.0713, 0.0325
+    {0.0742*0.0742*lengths.lower_arm*lengths.lower_arm*masses.lower_arm,0.0,0.0},
+    {0.0,0.0713*0.0713*lengths.lower_arm*lengths.lower_arm*masses.lower_arm,0.0},
+    {0.0,0.0,0.0325*0.0325*lengths.lower_arm*lengths.lower_arm*masses.lower_arm},
+  },
+  hand = {--- 0.0541, 0.0442, 0.0346
+    {0.0541*0.0541*lengths.hand*lengths.hand*masses.hand,0.0,0.0},
+    {0.0,0.0442*0.0442*lengths.hand*lengths.hand*masses.hand,0.0},
+    {0.0,0.0,0.0346*0.0346*lengths.hand*lengths.hand*masses.hand},
+  },
+  head = {--- 0.0736, 0.0634, 0.0765
+    {0.0736*0.0736*lengths.head*lengths.head*masses.head,0.0,0.0},
+    {0.0,0.0634*0.0634*lengths.head*lengths.head*masses.head,0.0},
+    {0.0,0.0,0.0765*0.0765*lengths.head*lengths.head*masses.head},
+  }
+};
+
+bodies = {
+  pelvis = { mass = masses.pelvis, com = coms.pelvis,
+    inertia = inertias.pelvis,
+  },
+  thigh = { mass = masses.thigh, com = coms.thigh,
+    inertia = inertias.thigh,
+  },
+  shank = { mass = masses.shank, com = coms.shank,
+    inertia = inertias.shank,
+  },
+  foot = { mass = masses.foot, com = coms.foot,
+    inertia = inertias.foot,
+  },
+  middle_trunk = { mass = masses.middle_trunk, com = coms.middle_trunk,
+    inertia = inertias.middle_trunk,
+  },
+  upper_trunk = { mass = masses.upper_trunk, com = coms.upper_trunk,
+    inertia = inertias.upper_trunk,
+  },
+  upper_arm = { mass = masses.upper_arm, com = coms.upper_arm,
+    inertia = inertias.upper_arm,
+  },
+  lower_arm = { mass = masses.lower_arm, com = coms.lower_arm,
+    inertia = inertias.lower_arm,
+  },
+  hand = { mass = masses.hand, com = coms.hand,
+    inertia = inertias.hand,
+  },
+  head = { mass = masses.head, com = coms.head,
+    inertia = inertias.head,
+  },
+}
+
 joints = {
   j_spherical = { "JointTypeSpherical" },
   --j_spherical = { "JointTypeEulerZYX" },
-  j_rot_y = { {0.0,1.0,0.0,0.0,0.0,0.0}, },
+  j_translationXYZ = { "JointTypeTranslationXYZ" },
+  j_rot_yz = {
+    { 0., 1., 0., 0., 0., 0.},
+    { 0., 0., 1., 0., 0., 0.}
+  },
+  j_rot_y = {
+    { 0., 1., 0., 0., 0., 0.},
+  },
+  j_fixed = {}
 }
 
 model = {
@@ -20,7 +153,7 @@ model = {
       body = {
         mass = 0.0
       },
-      joint = {"JointTypeTranslationXYZ"},
+      joint = joints.j_translationXYZ,
     },
     
     {
