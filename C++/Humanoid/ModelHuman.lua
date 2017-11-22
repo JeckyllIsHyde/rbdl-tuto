@@ -172,7 +172,7 @@ model = {
       },
     },
 
-    {
+    { -- right leg
       name = "thigh_r",
       parent = "pelvis",
       body = bodies.thigh,
@@ -263,6 +263,104 @@ model = {
         {-- hallux
 	  color = { 0.2,0.8,0.2 },
 	  translate = { 0.1870,0.05,-0.0787 },
+	  geometry = {
+	    sphere = { radius=0.025 },
+	  },
+	},
+      },
+    },
+
+    { -- lef leg
+      name = "thigh_l",
+      parent = "pelvis",
+      body = bodies.thigh,
+      joint = joints.j_spherical,
+      joint_frame = {
+        r = {0.0,0.0872,0.0},
+      },
+      visuals = {
+        {
+	  color = { 0.8,0.8,0.2 },
+	  translate = coms.thigh,
+	  geometry = {
+	    sphere = { radius=0.05 },
+	  },
+	},
+        {-- hip
+	  color = { 0.2,0.8,0.2 },
+	  geometry = {
+	    sphere = { radius=0.05 },
+	  },
+	},
+        {-- knee
+	  color = { 0.2,0.8,0.2 },
+	  translate = { 0.0,0.0,-lengths.thigh },
+	  geometry = {
+	    sphere = { radius=0.05 },
+	  },
+	},
+      },
+    },
+
+    {
+      name = "shank_l",
+      parent = "thigh_l",
+      body = bodies.shank,
+      joint = joints.j_rot_y,
+      joint_frame = {
+        r = {0.0,0.0,-lengths.thigh},
+      },
+      visuals = {
+        {
+	  color = { 0.8,0.8,0.2 },
+	  translate = coms.shank,
+	  geometry = {
+	    sphere = { radius=0.05 },
+	  },
+	},
+        {-- ankle
+	  color = { 0.2,0.8,0.2 },
+	  translate = { 0.0,0.0,-lengths.shank },
+	  geometry = {
+	    sphere = { radius=0.015 },
+	  },
+	},
+      },
+    },
+
+    {
+      name = "foot_l",
+      parent = "shank_l",
+      body = bodies.foot,
+      joint = joints.j_rot_y,
+      joint_frame = {
+        r = {0.0,0.0,-lengths.shank},
+      },
+      visuals = {
+        {
+	  color = { 0.8,0.8,0.2 },
+	  translate = coms.foot,
+	  geometry = {
+	    sphere = { radius=0.025 },
+	  },
+	},
+        {-- heel
+	  color = { 0.2,0.8,0.2 },
+	  translate = { -0.01,0.0,-0.06195 },
+	  geometry = {
+	    sphere = { radius=0.04185 },
+	  },
+	},
+        {-- meta5
+	  color = { 0.2,0.8,0.2 },
+	  translate = { 0.1870,0.05,-0.0787 },
+	  geometry = {
+	    sphere = { radius=0.025 },
+	  },
+	},
+        {-- hallux
+	  color = { 0.2,0.8,0.2 },
+	  translate = { 0.1870,-0.05,-0.0787 },
 	  geometry = {
 	    sphere = { radius=0.025 },
 	  },

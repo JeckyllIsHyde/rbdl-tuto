@@ -7,11 +7,18 @@ virtual_pelvis:T:Z
 pelvis:R:Z
 pelvis:R:Y
 pelvis:R:X
+# RIGHT LEG
 thigh_r:R:Z
 thigh_r:R:Y
 thigh_r:R:X
 shank_r:R:Y
 foot_r:R:Y
+# LEFT LEG
+thigh_l:R:Z
+thigh_l:R:Y
+thigh_l:R:X
+shank_l:R:Y
+foot_l:R:Y
 # The actual data part starts with the keyword 'DATA:'. The values are
 # separated by spaces or tabs.
 DATA_FROM: ModelHuman_data.csv

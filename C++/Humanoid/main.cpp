@@ -87,6 +87,9 @@ void init_engine_with_humanoid( PhysicsEngine& engine ) {
   unsigned int thigh_r_id = human->GetBodyId( "thigh_r" );
   unsigned int shank_r_id = human->GetBodyId( "shank_r" );
   unsigned int foot_r_id = human->GetBodyId( "foot_r" );
+  unsigned int thigh_l_id = human->GetBodyId( "thigh_l" );
+  unsigned int shank_l_id = human->GetBodyId( "shank_l" );
+  unsigned int foot_l_id = human->GetBodyId( "foot_l" );
   //  engine.mechSys.q[0] = 1.0; // x-axis height
   //  engine.mechSys.q[1] = 1.0; // y-axis height
   engine.mechSys.q[2] = 1.0; // z-axis height
@@ -114,6 +117,8 @@ void init_engine_with_humanoid( PhysicsEngine& engine ) {
   com = human->mBodies[pelvis_id].mCenterOfMass;
   engine.spheres.push_back( Sphere( com, 0.07) ); // pelvis com
   engine.spheres.back().bind( &(engine.mechSys), pelvis_id );
+
+  // RIGHT LEG
   engine.spheres.push_back( Sphere( Vector3d( 0.0,-0.0872, 0.0 ),
 				    0.05) ); // hip_r
   engine.spheres.back().bind( &(engine.mechSys), pelvis_id );
@@ -127,7 +132,7 @@ void init_engine_with_humanoid( PhysicsEngine& engine ) {
   engine.spheres.back().bind( &(engine.mechSys), shank_r_id );
   // foot_r
   engine.spheres.push_back( Sphere( Vector3d( -0.01, 0.0,-0.06195 ),
-				    0.04185) ); // heel 
+				    0.04185) ); // heel
   engine.spheres.back().bind( &(engine.mechSys), foot_r_id );
   engine.spheres.push_back( Sphere( Vector3d( 0.1870,-0.05,-0.0787 ),
 				    0.025) ); // meta5
@@ -135,6 +140,29 @@ void init_engine_with_humanoid( PhysicsEngine& engine ) {
   engine.spheres.push_back( Sphere( Vector3d( 0.1870, 0.05,-0.0787 ),
 				    0.025) ); // hallux
   engine.spheres.back().bind( &(engine.mechSys), foot_r_id );
+
+  // LEFT LEG
+  engine.spheres.push_back( Sphere( Vector3d( 0.0, 0.0872, 0.0 ),
+				    0.05) ); // hip_r
+  engine.spheres.back().bind( &(engine.mechSys), pelvis_id );
+  // thigh_r
+  engine.spheres.push_back( Sphere( Vector3d( 0.0, 0.0,-0.4222 ),
+				    0.05) ); // knee
+  engine.spheres.back().bind( &(engine.mechSys), thigh_l_id );
+  // shank_r
+  engine.spheres.push_back( Sphere( Vector3d( 0.0, 0.0,-0.4403 ),
+				    0.05) ); // ankle
+  engine.spheres.back().bind( &(engine.mechSys), shank_l_id );
+  // foot_r
+  engine.spheres.push_back( Sphere( Vector3d( -0.01, 0.0,-0.06195 ),
+				    0.04185) ); // heel 
+  engine.spheres.back().bind( &(engine.mechSys), foot_l_id );
+  engine.spheres.push_back( Sphere( Vector3d( 0.1870, 0.05,-0.0787 ),
+				    0.025) ); // meta5
+  engine.spheres.back().bind( &(engine.mechSys), foot_l_id );
+  engine.spheres.push_back( Sphere( Vector3d( 0.1870,-0.05,-0.0787 ),
+				    0.025) ); // hallux
+  engine.spheres.back().bind( &(engine.mechSys), foot_l_id );
 
   // apply initial contitions to model struct
   engine.mechSys.applyGeneralizedCoordinates();
