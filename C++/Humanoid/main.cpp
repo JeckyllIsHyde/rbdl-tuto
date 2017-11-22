@@ -11,6 +11,7 @@ const double dt = 0.0001;
 const double tmax = 5.0;
 
 const double K = 1.e4;
+const double Gamma = 50;
 
 inline Vector3d fromQuaternionToZYXangles( const Quaternion& Q );
 
@@ -27,6 +28,7 @@ struct Sphere {
   void bind( MechTreeSystem* mts, unsigned int id );
   void clearLoad();
   Vector3d globalPosition();
+  Vector3d globalVelocityOnPoint( const Vector3d& p );
   void applyLoad( Vector3d p );
 };
 
@@ -76,17 +78,16 @@ void init_engine_with_humanoid( PhysicsEngine& engine ) {
   engine.mechSys.initGeneralizedVariables();
 
   // manual dof initialization
+  unsigned int pelvis_id = engine.mechSys.model.GetBodyId( "pelvis" );
   //  engine.mechSys.q[0] = 1.0; // x-axis height
   //  engine.mechSys.q[1] = 1.0; // y-axis height
   engine.mechSys.q[2] = 1.0; // z-axis height
 
   Vector3d ori( 0.0, 1.0*M_PI/3, 0.0); // body orientation
-  if ( engine.mechSys.model.
-       mJoints[engine.mechSys.model.
-	       GetBodyId( "pelvis" )].mJointType ==
+  if ( engine.mechSys.model.mJoints[pelvis_id].mJointType ==
        JointTypeSpherical )
     engine.mechSys.
-      model.SetQuaternion( engine.mechSys.model.GetBodyId( "pelvis" ),
+      model.SetQuaternion( pelvis_id,
 			   Quaternion::fromZYXAngles( ori ),
 			   engine.mechSys.q );
   else
@@ -100,7 +101,6 @@ void init_engine_with_humanoid( PhysicsEngine& engine ) {
   engine.mechSys.qd[5] = 1.0; // x-axis angular velocity
 
   // create spheres for system collision
-  unsigned int pelvis_id = engine.mechSys.model.GetBodyId( "pelvis" );
   engine.spheres.push_back( Sphere( Vector3d( 0.0, 0.0, 0.0 ),
 				    0.1) );
   engine.spheres.back().bind( &(engine.mechSys), pelvis_id );
@@ -144,6 +144,16 @@ Vector3d Sphere::globalPosition() {
     return pos;
   return Vector3d( sys_pt->model.X_base[b_id].E.transpose()*pos
 		   +sys_pt->model.X_base[b_id].r );
+}
+
+Vector3d Sphere::globalVelocityOnPoint( const Vector3d& p ) {
+  if (sys_pt==NULL)
+    return Vector3dZero;
+  Vector3d lp = sys_pt->model.X_base[b_id].E
+    *(p-sys_pt->model.X_base[b_id].r);
+  return CalcPointVelocity( sys_pt->model,
+			    sys_pt->q, sys_pt->qd,
+			    b_id, lp, false );
 }
 
 void Sphere::applyLoad( Vector3d p ){
@@ -304,11 +314,11 @@ void PhysicsEngine::update( double dt ) {
 }
 
 void PhysicsEngine::loadByJOnI( Sphere& s1, Sphere& s2 ) {
-  Vector3d F2, Fn, r21, n, vc,
+  Vector3d F2, Fn, r21, n, vc, vcn,
     gP2 = s2.globalPosition(),
     gP1 = s1.globalPosition(),
     gPc;
-  double d21, s, Fn_n,
+  double d21, s, Fn_n, vcn_n,
     m12= 0.5*1/*m1*m2/(m1+m2)*/;
   r21= gP2-gP1;
   d21 = r21.norm();
@@ -318,10 +328,17 @@ void PhysicsEngine::loadByJOnI( Sphere& s1, Sphere& s2 ) {
     n = r21/d21;
     // calcular velocidad de contacto y el vector tangente
     gPc = gP1+r21*(s1.R/d21);
+    vc = s2.globalVelocityOnPoint( gPc )
+      - s1.globalVelocityOnPoint( gPc );
+    vcn_n = vc.dot(n);    vcn = n*vcn_n;
       
     // fuerzas normales
     // Fn: fuerza de Hertz
     Fn_n = K*pow(s,1.5);
+    // disipacion plastica
+    Fn_n-= m12*sqrt(s)*Gamma*vcn_n;
+    if (Fn_n<0)
+      Fn_n = 0.0;
     Fn = n*Fn_n;
 
     // construir fuerza total
