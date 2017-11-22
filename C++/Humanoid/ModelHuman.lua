@@ -159,29 +159,14 @@ model = {
     {
       name = "pelvis",
       parent = "virtual_pelvis",
-      body = {
-        mass = 1.0,
-	com = {0.0,0.0,0.0},
-	iniertia = {
-	  {0.1,0.0,0.0},
-	  {0.0,0.1,0.0},
-	  {0.0,0.0,0.1},
-	},
-      },
+      body = bodies.pelvis,
       joint = joints.j_spherical,
-      joint_frame = {
-        r = {0.0,0.0,0.0},
-	E = {
-	  {1.0,0.0,0.0},
-	  {0.0,1.0,0.0},
-	  {0.0,0.0,1.0},
-	},
-      },
-      visuals = {
+      visuals = {-- pelvis com
         {
 	  color = { 0.8,0.8,0.2 },
+	  translate = coms.pelvis,
 	  geometry = {
-	    sphere = { radius=0.1 },
+	    sphere = { radius=0.07 },
 	  }
 	},
       },
@@ -190,41 +175,28 @@ model = {
     {
       name = "thigh_r",
       parent = "pelvis",
-      body = {
-        mass = 1.0,
-	com = {0.0,0.0,-0.2},
-	iniertia = {
-	  {0.1,0.0,0.0},
-	  {0.0,0.1,0.0},
-	  {0.0,0.0,0.1},
-	},
-      },
+      body = bodies.thigh,
       joint = joints.j_spherical,
       joint_frame = {
-        r = {0.0,-0.1,0.0},
-	E = {
-	  {1.0,0.0,0.0},
-	  {0.0,1.0,0.0},
-	  {0.0,0.0,1.0},
-	},
+        r = {0.0,-0.0872,0.0},
       },
       visuals = {
         {
 	  color = { 0.8,0.8,0.2 },
-	  translate = { 0.0,0.0,-0.2 },
+	  translate = coms.thigh,
 	  geometry = {
 	    sphere = { radius=0.05 },
 	  },
 	},
-        {
+        {-- hip
 	  color = { 0.2,0.8,0.2 },
 	  geometry = {
 	    sphere = { radius=0.05 },
 	  },
 	},
-        {
+        {-- knee
 	  color = { 0.2,0.8,0.2 },
-	  translate = { 0.0,0.0,-0.4 },
+	  translate = { 0.0,0.0,-lengths.thigh },
 	  geometry = {
 	    sphere = { radius=0.05 },
 	  },
@@ -235,32 +207,24 @@ model = {
     {
       name = "shank_r",
       parent = "thigh_r",
-      body = {
-        mass = 1.0,
-	com = {0.0,0.0,-0.18},
-	iniertia = {
-	  {0.1,0.0,0.0},
-	  {0.0,0.1,0.0},
-	  {0.0,0.0,0.1},
-	},
-      },
+      body = bodies.shank,
       joint = joints.j_rot_y,
       joint_frame = {
-        r = {0.0,0.0,-0.4},
+        r = {0.0,0.0,-lengths.thigh},
       },
       visuals = {
         {
 	  color = { 0.8,0.8,0.2 },
-	  translate = { 0.0,0.0,-0.18 },
+	  translate = coms.shank,
 	  geometry = {
 	    sphere = { radius=0.05 },
 	  },
 	},
-        {
+        {-- ankle
 	  color = { 0.2,0.8,0.2 },
-	  translate = { 0.0,0.0,-0.36 },
+	  translate = { 0.0,0.0,-lengths.shank },
 	  geometry = {
-	    sphere = { radius=0.05 },
+	    sphere = { radius=0.015 },
 	  },
 	},
       },
@@ -269,52 +233,44 @@ model = {
     {
       name = "foot_r",
       parent = "shank_r",
-      body = {
-        mass = 1.0,
-	com = {0.1,0.0,-0.08},
-	iniertia = {
-	  {0.1,0.0,0.0},
-	  {0.0,0.1,0.0},
-	  {0.0,0.0,0.1},
-	},
-      },
+      body = bodies.foot,
       joint = joints.j_rot_y,
       joint_frame = {
-        r = {0.0,0.0,-0.4},
+        r = {0.0,0.0,-lengths.shank},
       },
       visuals = {
         {
 	  color = { 0.8,0.8,0.2 },
-	  translate = { 0.1,0.0,-0.08 },
+	  translate = coms.foot,
 	  geometry = {
-	    sphere = { radius=0.01 },
+	    sphere = { radius=0.025 },
 	  },
 	},
-        {
+        {-- heel
 	  color = { 0.2,0.8,0.2 },
-	  translate = { -0.01,0.0,-0.1 },
+	  translate = { -0.01,0.0,-0.06195 },
 	  geometry = {
-	    sphere = { radius=0.01 },
+	    sphere = { radius=0.04185 },
 	  },
 	},
-        {
+        {-- meta5
 	  color = { 0.2,0.8,0.2 },
-	  translate = { 0.2,-0.03,-0.1 },
+	  translate = { 0.1870,-0.05,-0.0787 },
 	  geometry = {
-	    sphere = { radius=0.01 },
+	    sphere = { radius=0.025 },
 	  },
 	},
-        {
+        {-- hallux
 	  color = { 0.2,0.8,0.2 },
-	  translate = { 0.2,0.03,-0.1 },
+	  translate = { 0.1870,0.05,-0.0787 },
 	  geometry = {
-	    sphere = { radius=0.01 },
+	    sphere = { radius=0.025 },
 	  },
 	},
       },
     },
 
-},
+  },
 }
 
 return model

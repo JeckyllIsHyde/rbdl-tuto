@@ -96,38 +96,39 @@ void init_engine_with_humanoid( PhysicsEngine& engine ) {
   else
     engine.mechSys.q.segment<3>(3) = ori;
 
-  engine.mechSys.qd[0] = 1.0; // x-axis linear velocity
-  engine.mechSys.qd[1] = 0.5; // y-axis linear velocity
-  engine.mechSys.qd[2] = 1.0; // z-axis linear velocity
+  //engine.mechSys.qd[0] = 0.1; // x-axis linear velocity
+  //engine.mechSys.qd[1] = 0.05; // y-axis linear velocity
+  //engine.mechSys.qd[2] = 0.1; // z-axis linear velocity
   //  engine.mechSys.qd[3] = 1.0; // z-axis angular velocity
   //  engine.mechSys.qd[4] = 1.0; // y-axis angular velocity
-  engine.mechSys.qd[5] = 1.0; // x-axis angular velocity
+  //engine.mechSys.qd[5] = 1.0; // x-axis angular velocity
 
   // create spheres for system collision
+  Vector3d com;
   // pelvis
-  engine.spheres.push_back( Sphere( Vector3d( 0.0, 0.0, 0.0 ),
-				    0.1) );
+  com = engine.mechSys.model.mBodies[pelvis_id].mCenterOfMass;
+  engine.spheres.push_back( Sphere( com, 0.07) ); // pelvis com
   engine.spheres.back().bind( &(engine.mechSys), pelvis_id );
-  engine.spheres.push_back( Sphere( Vector3d( 0.0,-0.1, 0.0 ),
-				    0.05) );
+  engine.spheres.push_back( Sphere( Vector3d( 0.0,-0.0872, 0.0 ),
+				    0.05) ); // hip_r
   engine.spheres.back().bind( &(engine.mechSys), pelvis_id );
   // thigh_r
-  engine.spheres.push_back( Sphere( Vector3d( 0.0, 0.0,-0.4 ),
-				    0.05) );
+  engine.spheres.push_back( Sphere( Vector3d( 0.0, 0.0,-0.4222 ),
+				    0.05) ); // knee
   engine.spheres.back().bind( &(engine.mechSys), thigh_r_id );
   // shank_r
-  engine.spheres.push_back( Sphere( Vector3d( 0.0, 0.0,-0.36 ),
-				    0.05) );
+  engine.spheres.push_back( Sphere( Vector3d( 0.0, 0.0,-0.4403 ),
+				    0.05) ); // ankle
   engine.spheres.back().bind( &(engine.mechSys), shank_r_id );
   // foot_r
-  engine.spheres.push_back( Sphere( Vector3d( 0.01, 0.0,-0.1 ),
-				    0.01) );
+  engine.spheres.push_back( Sphere( Vector3d( -0.01, 0.0,-0.6195 ),
+				    0.04185) ); // heel 
   engine.spheres.back().bind( &(engine.mechSys), foot_r_id );
-  engine.spheres.push_back( Sphere( Vector3d( 0.2,-0.03,-0.1 ),
-				    0.01) );
+  engine.spheres.push_back( Sphere( Vector3d( 0.1870,-0.05,-0.0787 ),
+				    0.025) ); // meta5
   engine.spheres.back().bind( &(engine.mechSys), foot_r_id );
-  engine.spheres.push_back( Sphere( Vector3d( 0.2, 0.03,-0.1 ),
-				    0.01) );
+  engine.spheres.push_back( Sphere( Vector3d( 0.1870, 0.05,-0.0787 ),
+				    0.025) ); // hallux
   engine.spheres.back().bind( &(engine.mechSys), foot_r_id );
 
   // apply initial contitions to model struct
