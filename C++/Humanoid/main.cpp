@@ -11,7 +11,7 @@ const double dt = 0.0001;
 const double tmax = 5.0;
 
 const double K = 1.e4;
-const double Gamma = 50;
+const double Gamma = 500;
 
 inline Vector3d fromQuaternionToZYXangles( const Quaternion& Q );
 
@@ -73,7 +73,12 @@ void init_engine_with_humanoid( PhysicsEngine& engine ) {
   for (int id=0; id<human->mBodies.size(); id++)
     if (human->mBodies[id].mMass==0.0)
       human->mBodies[id].mIsVirtual = true;
-
+  /*    else // debugging inertias
+      std::cout << human->GetBodyName(id) << ":\n"
+		<< human->mBodies[id].mInertia
+		<< std::endl;
+  */
+  
   // initialize q,qd,qdd,tau and Q
   engine.mechSys.initGeneralizedVariables();
 
@@ -121,7 +126,7 @@ void init_engine_with_humanoid( PhysicsEngine& engine ) {
 				    0.05) ); // ankle
   engine.spheres.back().bind( &(engine.mechSys), shank_r_id );
   // foot_r
-  engine.spheres.push_back( Sphere( Vector3d( -0.01, 0.0,-0.6195 ),
+  engine.spheres.push_back( Sphere( Vector3d( -0.01, 0.0,-0.06195 ),
 				    0.04185) ); // heel 
   engine.spheres.back().bind( &(engine.mechSys), foot_r_id );
   engine.spheres.push_back( Sphere( Vector3d( 0.1870,-0.05,-0.0787 ),
@@ -350,6 +355,19 @@ void PhysicsEngine::loadByJOnI( Sphere& s1, Sphere& s2 ) {
   d21 = r21.norm();
   s = (s1.R+s2.R)-d21;
   if (s>0) {
+    /* Debugging contacts
+    if ( s1.sys_pt!=NULL || s2.sys_pt!=NULL )
+      std::cout << "body collision!!! between: "
+		<< ((s1.sys_pt==NULL)?
+		    "Walls"
+		    :s1.sys_pt->model.GetBodyName(s1.b_id))
+		<< " and "
+		<< ((s2.sys_pt==NULL)?
+		    "Walls"
+		    :s2.sys_pt->model.GetBodyName(s2.b_id))
+		<< std::endl;
+    */    
+
     // geometria y dinamica del contacto
     n = r21/d21;
     // calcular velocidad de contacto y el vector tangente
