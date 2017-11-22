@@ -10,6 +10,8 @@ pelvis:R:X
 thigh_r:R:Z
 thigh_r:R:Y
 thigh_r:R:X
+shank_r:R:Y
+foot_r:R:Y
 # The actual data part starts with the keyword 'DATA:'. The values are
 # separated by spaces or tabs.
 DATA_FROM: ModelHuman_data.csv
