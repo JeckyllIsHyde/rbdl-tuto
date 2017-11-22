@@ -12,6 +12,16 @@ const double tmax = 0.2;
 
 inline Vector3d fromQuaternionToZYXangles( const Quaternion& Q );
 
+struct Sphere;
+struct MechTreeSystem;
+
+struct Sphere {
+  Vector3d pos, f, tau;
+  double R;
+  MechTreeSystem* sys_pt;
+  unsigned int b_id;
+};
+
 struct MechTreeSystem {
 
   typedef std::vector<SpatialVector> ForceContainer;
