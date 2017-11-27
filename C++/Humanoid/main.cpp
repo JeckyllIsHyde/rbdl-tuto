@@ -92,7 +92,7 @@ void init_engine_with_humanoid( PhysicsEngine& engine ) {
   unsigned int foot_l_id = human->GetBodyId( "foot_l" );
   unsigned int middle_trunk_id = human->GetBodyId( "middle_trunk" );
   unsigned int upper_trunk_id = human->GetBodyId( "upper_trunk" );
-  //  unsigned int head_id = human->GetBodyId( "head" );
+  unsigned int head_id = human->GetBodyId( "head" );
   unsigned int upper_arm_r_id = human->GetBodyId( "upper_arm_r" );
   unsigned int lower_arm_r_id = human->GetBodyId( "lower_arm_r" );
   unsigned int upper_arm_l_id = human->GetBodyId( "upper_arm_l" );
@@ -116,8 +116,8 @@ void init_engine_with_humanoid( PhysicsEngine& engine ) {
   //engine.mechSys.qd[0] = 0.1; // x-axis linear velocity
   //engine.mechSys.qd[1] = 0.05; // y-axis linear velocity
   //engine.mechSys.qd[2] = 0.1; // z-axis linear velocity
-  //  engine.mechSys.qd[3] = 1.0; // z-axis angular velocity
-  //  engine.mechSys.qd[4] = 1.0; // y-axis angular velocity
+  //engine.mechSys.qd[3] = 1.0; // z-axis angular velocity
+  //engine.mechSys.qd[4] = 1.0; // y-axis angular velocity
   //engine.mechSys.qd[5] = 1.0; // x-axis angular velocity
 
   // create spheres for system collision
@@ -188,11 +188,9 @@ void init_engine_with_humanoid( PhysicsEngine& engine ) {
 				    0.04 ) ); // right shoulder
   engine.spheres.back().bind( &(engine.mechSys), upper_trunk_id );
   // head
-  /*
   com = human->mBodies[head_id].mCenterOfMass;
-  engine.spheres.push_back( Sphere( com, 0.1 ) ); // head com
+  engine.spheres.push_back( Sphere( com, 0.2429/2*0.6 ) ); // head com
   engine.spheres.back().bind( &(engine.mechSys), head_id );
-  */
 
   // RIGHT ARM
   // upper arm

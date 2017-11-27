@@ -34,7 +34,7 @@ coms = {
   upper_arm = { 0., 0., -0.1626},
   lower_arm = { 0., 0., -0.1230},
   hand = { 0., 0., -0.0680},
-  head = { 0., 0.,  1.1214}
+  head = { 0., 0.,  0.1214}
 }
 
 inertias = {
@@ -420,6 +420,31 @@ model = {
       },
     },
 
+    {
+      name = "head",
+      parent = "upper_trunk",
+      body = bodies.head,
+      joint = joints.j_spherical,
+      joint_frame = {
+        r = { 0.0, 0.0, lengths.upper_trunk },
+      },
+      visuals = {
+        {
+	  color = { 0.8,0.2,0.2 },
+	  translate = coms.head,
+	  geometry = {
+	    sphere = { radius=0.6*lengths.head/2 },
+	  },
+	},
+        {
+	  color = { 0.2,0.8,0.2 },
+	  geometry = {
+	    sphere = { radius=0.08 },
+	  },
+	},
+      },
+    },
+
     {-- right arm
       name = "upper_arm_r",
       parent = "upper_trunk",
@@ -538,34 +563,5 @@ model = {
 
   },
 }
-
-tmp = {
-      name = "head",
-      parent = "upper_trunk",
-      body = bodies.head,
-      joint = joints.j_spherical,
-      joint_frame = {
-        r = { 0.0, 0.0, lengths.upper_trunk },
-      },
-      visuals = {
-        {
-	  color = { 0.8,0.2,0.2 },
-	  translate = { 0.0,0.0,lengths.upper_trunk-0.0680 },
-	  geometry = {
-	    sphere = { radius=0.1 },
-	  },
-	},
-        {
-	  color = { 0.2,0.8,0.8 },
-	  translate = { 0.0,0.0,lengths.upper_trunk },
-	  geometry = {
-	    sphere = { radius=0.02 },
-	  },
-	},
-      },
-    }
-
---  },
---}
 
 return model

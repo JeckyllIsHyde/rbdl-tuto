@@ -24,9 +24,9 @@ middle_trunk:R:Z
 middle_trunk:R:Y
 middle_trunk:R:X
 upper_trunk:R:Y
-#head:R:Z
-#head:R:Y
-#head:R:X
+head:R:Z
+head:R:Y
+head:R:X
 # RIGHT ARM
 upper_arm_r:R:Z
 upper_arm_r:R:Y
