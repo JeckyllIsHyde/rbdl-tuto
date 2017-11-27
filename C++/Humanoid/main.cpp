@@ -82,7 +82,7 @@ void init_engine_with_humanoid( PhysicsEngine& engine ) {
   // initialize q,qd,qdd,tau and Q
   engine.mechSys.initGeneralizedVariables();
 
-  // manual dof initialization
+  // ids bodies
   unsigned int pelvis_id = human->GetBodyId( "pelvis" );
   unsigned int thigh_r_id = human->GetBodyId( "thigh_r" );
   unsigned int shank_r_id = human->GetBodyId( "shank_r" );
@@ -91,6 +91,14 @@ void init_engine_with_humanoid( PhysicsEngine& engine ) {
   unsigned int shank_l_id = human->GetBodyId( "shank_l" );
   unsigned int foot_l_id = human->GetBodyId( "foot_l" );
   unsigned int middle_trunk_id = human->GetBodyId( "middle_trunk" );
+  unsigned int upper_trunk_id = human->GetBodyId( "upper_trunk" );
+  //  unsigned int head_id = human->GetBodyId( "head" );
+  unsigned int upper_arm_r_id = human->GetBodyId( "upper_arm_r" );
+  unsigned int lower_arm_r_id = human->GetBodyId( "lower_arm_r" );
+  unsigned int upper_arm_l_id = human->GetBodyId( "upper_arm_l" );
+  unsigned int lower_arm_l_id = human->GetBodyId( "lower_arm_l" );
+
+  // manual dof initialization
   //  engine.mechSys.q[0] = 1.0; // x-axis height
   //  engine.mechSys.q[1] = 1.0; // y-axis height
   engine.mechSys.q[2] = 1.0; // z-axis height
@@ -165,9 +173,46 @@ void init_engine_with_humanoid( PhysicsEngine& engine ) {
 				    0.025) ); // hallux
   engine.spheres.back().bind( &(engine.mechSys), foot_l_id );
   // TRUNK
+  // middle trunk
   engine.spheres.push_back( Sphere( Vector3d( 0.0, 0.0, 0.1457 ),
 				    0.08) ); // spine joint
   engine.spheres.back().bind( &(engine.mechSys), middle_trunk_id );
+  // upper trunk
+  engine.spheres.push_back( Sphere( Vector3d( 0.0, 0.0, 0.2155 ),
+				    0.1 ) ); //
+  engine.spheres.back().bind( &(engine.mechSys), upper_trunk_id );
+  engine.spheres.push_back( Sphere( Vector3d( 0.0,-0.1900, 0.2421 ),
+				    0.04 ) ); // right shoulder
+  engine.spheres.back().bind( &(engine.mechSys), upper_trunk_id );
+  engine.spheres.push_back( Sphere( Vector3d( 0.0, 0.1900, 0.2421 ),
+				    0.04 ) ); // right shoulder
+  engine.spheres.back().bind( &(engine.mechSys), upper_trunk_id );
+  // head
+  /*
+  com = human->mBodies[head_id].mCenterOfMass;
+  engine.spheres.push_back( Sphere( com, 0.1 ) ); // head com
+  engine.spheres.back().bind( &(engine.mechSys), head_id );
+  */
+
+  // RIGHT ARM
+  // upper arm
+  engine.spheres.push_back( Sphere( Vector3d( 0.0,0.0,-0.2817 ),
+				    0.04) ); // elbow_arm_r
+  engine.spheres.back().bind( &(engine.mechSys), upper_arm_r_id );
+  // lower arm
+  engine.spheres.push_back( Sphere( Vector3d( 0.0,0.0,-0.2817 ),
+				    0.04) ); // twist_arm_r
+  engine.spheres.back().bind( &(engine.mechSys), lower_arm_r_id );
+
+  // LEFT ARM
+  // upper arm
+  engine.spheres.push_back( Sphere( Vector3d( 0.0,0.0,-0.2817 ),
+				    0.04) ); // elbow_arm_r
+  engine.spheres.back().bind( &(engine.mechSys), upper_arm_l_id );
+  // lower arm
+  engine.spheres.push_back( Sphere( Vector3d( 0.0,0.0,-0.2817 ),
+				    0.04) ); // twist_arm_r
+  engine.spheres.back().bind( &(engine.mechSys), lower_arm_l_id );
 
   // apply initial contitions to model struct
   engine.mechSys.applyGeneralizedCoordinates();

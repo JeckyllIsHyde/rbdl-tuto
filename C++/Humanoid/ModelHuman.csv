@@ -23,6 +23,20 @@ foot_l:R:Y
 middle_trunk:R:Z
 middle_trunk:R:Y
 middle_trunk:R:X
+upper_trunk:R:Y
+#head:R:Z
+#head:R:Y
+#head:R:X
+# RIGHT ARM
+upper_arm_r:R:Z
+upper_arm_r:R:Y
+upper_arm_r:R:X
+lower_arm_r:R:Y
+# LEFT ARM
+upper_arm_l:R:Z
+upper_arm_l:R:Y
+upper_arm_l:R:X
+lower_arm_l:R:Y
 # The actual data part starts with the keyword 'DATA:'. The values are
 # separated by spaces or tabs.
 DATA_FROM: ModelHuman_data.csv
