@@ -13,6 +13,9 @@ const double tmax = 5.0;
 const double K = 1.e4;
 const double Gamma = 500;
 
+const double Kcundall = 10, MU = 0.4;
+const double ERFF = 1.e-8;
+
 inline Vector3d fromQuaternionToZYXangles( const Quaternion& Q );
 
 struct Sphere;
@@ -56,10 +59,17 @@ struct PhysicsEngine {
   SphereContainer spheres;
   SphereContainer walls;
 
+  typedef std::vector< std::vector<Vector3d> > CollisionState;
+  typedef std::vector< std::vector<int> > CollisionBoolState;
+  CollisionState collisionState;
+  CollisionBoolState isCollision;
+
   PhysicsEngine();
   void printData( double t );
   void update( double dt );
-  void loadByJOnI( Sphere& s1, Sphere& s2 );
+  void loadByJOnI( Sphere& s1, Sphere& s2,
+		   Vector3d& L, int& isCol, double dt );
+  void initCollisionState();
 };
 
 void init_engine_with_humanoid( PhysicsEngine& engine ) {
@@ -222,6 +232,7 @@ int main() {
 
   // init engine
   init_engine_with_humanoid( engine );
+  engine.initCollisionState();
 
   // simulate
   double t;
@@ -268,7 +279,7 @@ void Sphere::applyLoad( Vector3d p ){
     return;
   // apply on f_ext
   SpatialVector f_tmp;
-  f_tmp << VectorCrossMatrix( p )*f,f; 
+  f_tmp << (VectorCrossMatrix( p )*f+tau),f;
   sys_pt->f_ext[b_id] += f_tmp; 
 }
 
@@ -411,21 +422,37 @@ void PhysicsEngine::update( double dt ) {
   int i,j;
   for( i=0;i<spheres.size();i++ ) {
     for ( j=i+1;j<spheres.size();j++ )
-      loadByJOnI( spheres[i],spheres[j] );
+      loadByJOnI( spheres[i],spheres[j],
+		  collisionState[i][j],
+		  isCollision[i][j], dt );
     for ( j=0;j<walls.size();j++ )
-      loadByJOnI( spheres[i],walls[j] );
+      loadByJOnI( spheres[i],walls[j],
+		  collisionState[i][j+spheres.size()-1],
+		  isCollision[i][j+spheres.size()-1], dt );
   }
 
   mechSys.forwardDynamics();
   mechSys.step( dt );
 }
 
-void PhysicsEngine::loadByJOnI( Sphere& s1, Sphere& s2 ) {
-  Vector3d F2, Fn, r21, n, vc, vcn,
+void PhysicsEngine::initCollisionState() {
+  collisionState =
+    CollisionState( spheres.size()+walls.size(),
+		    std::vector<Vector3d>( spheres.size()+walls.size(),
+					   Vector3dZero ) );
+  isCollision =
+    CollisionBoolState( spheres.size()+walls.size(),
+			std::vector<int>( spheres.size()+walls.size(),
+					  0 ) );
+}
+
+void PhysicsEngine::loadByJOnI( Sphere& s1, Sphere& s2,
+				Vector3d& L, int& isCol, double dt ) {
+  Vector3d F2, Fn, Ft, r21, n, t, vc, vcn, vct,
     gP2 = s2.globalPosition(),
     gP1 = s1.globalPosition(),
     gPc;
-  double d21, s, Fn_n, vcn_n,
+  double d21, s, Fn_n, vcn_n, vct_t, Ft_tmax,
     m12= 0.5*1/*m1*m2/(m1+m2)*/;
   r21= gP2-gP1;
   d21 = r21.norm();
@@ -451,6 +478,11 @@ void PhysicsEngine::loadByJOnI( Sphere& s1, Sphere& s2 ) {
     vc = s2.globalVelocityOnPoint( gPc )
       - s1.globalVelocityOnPoint( gPc );
     vcn_n = vc.dot(n);    vcn = n*vcn_n;
+    vct = vc-vcn; vct_t = vct.norm();
+    if (vct_t < ERFF)
+      t = Vector3dZero;
+    else
+      t = vct/vct_t;
       
     // fuerzas normales
     // Fn: fuerza de Hertz
@@ -461,11 +493,25 @@ void PhysicsEngine::loadByJOnI( Sphere& s1, Sphere& s2 ) {
       Fn_n = 0.0;
     Fn = n*Fn_n;
 
+    // fuerzas tangenciales
+    // fuerza estatica
+    L += vct*dt;
+    Ft = -Kcundall*L;
+    // fuerza cinetica
+    Ft_tmax = MU*Fn_n;
+    if (Ft.norm()>Ft_tmax)
+      Ft = L*(-Ft_tmax/L.norm());
+
     // construir fuerza total
-    F2 = Fn;
-    s2.f = F2;
-    s1.f =(-F2);
-    s1.applyLoad( gPc );
-    s2.applyLoad( gPc );
+    F2 = Fn+0*Ft;
+    s2.f = F2; s2.tau += VectorCrossMatrix(-n*s2.R)*Ft;
+    s1.f =(-F2); s1.tau += VectorCrossMatrix(n*s1.R)*(-Ft);
+    s1.applyLoad( gP1/*gPc*/ );
+    s2.applyLoad( gP2/*gPc*/ );
+
+    isCol=1;
+  }
+  else if (isCol == 1) {
+    L=Vector3dZero; isCol=0;
   }
 }
