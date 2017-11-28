@@ -427,8 +427,8 @@ void PhysicsEngine::update( double dt ) {
 		  isCollision[i][j], dt );
     for ( j=0;j<walls.size();j++ )
       loadByJOnI( spheres[i],walls[j],
-		  collisionState[i][j+spheres.size()-1],
-		  isCollision[i][j+spheres.size()-1], dt );
+		  collisionState[i][j+spheres.size()],
+		  isCollision[i][j+spheres.size()], dt );
   }
 
   mechSys.forwardDynamics();
@@ -503,11 +503,11 @@ void PhysicsEngine::loadByJOnI( Sphere& s1, Sphere& s2,
       Ft = L*(-Ft_tmax/L.norm());
 
     // construir fuerza total
-    F2 = Fn+0*Ft;
-    s2.f = F2; s2.tau += VectorCrossMatrix(-n*s2.R)*Ft;
-    s1.f =(-F2); s1.tau += VectorCrossMatrix(n*s1.R)*(-Ft);
-    s1.applyLoad( gP1/*gPc*/ );
-    s2.applyLoad( gP2/*gPc*/ );
+    F2 = Fn+Ft;
+    s2.f = F2;
+    s1.f =(-F2);
+    s1.applyLoad( gPc );
+    s2.applyLoad( gPc );
 
     isCol=1;
   }
