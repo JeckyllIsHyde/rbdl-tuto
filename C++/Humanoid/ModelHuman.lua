@@ -34,7 +34,7 @@ coms = {
   upper_arm = { 0., 0., -0.1626},
   lower_arm = { 0., 0., -0.1230},
   hand = { 0., 0., -0.0680},
-  head = { 0., 0.,  1.1214}
+  head = { 0., 0.,  0.1214}
 }
 
 inertias = {
@@ -124,8 +124,8 @@ bodies = {
 }
 
 joints = {
-  j_spherical = { "JointTypeSpherical" },
-  --j_spherical = { "JointTypeEulerZYX" },
+  --j_spherical = { "JointTypeSpherical" },
+  j_spherical = { "JointTypeEulerZYX" },
   j_translationXYZ = { "JointTypeTranslationXYZ" },
   j_rot_yz = {
     { 0., 1., 0., 0., 0., 0.},
@@ -163,7 +163,7 @@ model = {
       joint = joints.j_spherical,
       visuals = {-- pelvis com
         {
-	  color = { 0.8,0.8,0.2 },
+	  color = { 0.8,0.2,0.8 },
 	  translate = coms.pelvis,
 	  geometry = {
 	    sphere = { radius=0.07 },
@@ -363,6 +363,199 @@ model = {
 	  translate = { 0.1870,-0.05,-0.0787 },
 	  geometry = {
 	    sphere = { radius=0.025 },
+	  },
+	},
+      },
+    },
+
+    { --- TRUNK
+      name = "middle_trunk",
+      parent = "pelvis",
+      body = bodies.middle_trunk,
+      joint = joints.j_spherical,
+      joint_frame = {
+        r = { 0.0, 0.0, lengths.pelvis },
+      },
+      visuals = {
+        {
+	  color = { 0.8,0.8,0.2 },
+	  translate = coms.middle_trunk,
+	  geometry = {
+	    sphere = { radius=0.07 },
+	  },
+	},
+        {-- spine joint
+	  color = { 0.2,0.8,0.8 },
+	  translate = { 0.0,0.0,lengths.pelvis },
+	  geometry = {
+	    sphere = { radius=0.08 },
+	  },
+	},
+      },
+    },
+
+    {
+      name = "upper_trunk",
+      parent = "middle_trunk",
+      body = bodies.upper_trunk,
+      joint = joints.j_rot_y,
+      joint_frame = {
+        r = { 0.0, 0.0, lengths.middle_trunk },
+      },
+      visuals = {
+        {
+	  color = { 0.8,0.8,0.2 },
+	  translate = coms.upper_trunk,
+	  geometry = {
+	    sphere = { radius=0.07 },
+	  },
+	},
+        {
+	  color = { 0.2,0.8,0.8 },
+	  translate = { 0.0,0.0,lengths.middle_trunk },
+	  geometry = {
+	    sphere = { radius=0.1 },
+	  },
+	},
+      },
+    },
+
+    {
+      name = "head",
+      parent = "upper_trunk",
+      body = bodies.head,
+      joint = joints.j_spherical,
+      joint_frame = {
+        r = { 0.0, 0.0, lengths.upper_trunk },
+      },
+      visuals = {
+        {
+	  color = { 0.8,0.2,0.2 },
+	  translate = coms.head,
+	  geometry = {
+	    sphere = { radius=0.6*lengths.head/2 },
+	  },
+	},
+        {
+	  color = { 0.2,0.8,0.2 },
+	  geometry = {
+	    sphere = { radius=0.08 },
+	  },
+	},
+      },
+    },
+
+    {-- right arm
+      name = "upper_arm_r",
+      parent = "upper_trunk",
+      body = bodies.upper_arm,
+      joint = joints.j_spherical,
+      joint_frame = {
+        r = { 0.0, -0.1900, lengths.upper_trunk },
+      },
+      visuals = {
+        {
+	  color = { 0.8,0.8,0.2 },
+	  translate = coms.upper_arm,
+	  geometry = {
+	    sphere = { radius=0.04 },
+	  },
+	},
+        {
+	  color = { 0.2,0.8,0.2 },
+	  geometry = {
+	    sphere = { radius=0.04 },
+	  },
+	},
+        {
+	  color = { 0.2,0.8,0.2 },
+	  translate = { 0.0,0.0,-lengths.upper_arm },
+	  geometry = {
+	    sphere = { radius=0.04 },
+	  },
+	},
+      },
+    },
+
+    {
+      name = "lower_arm_r",
+      parent = "upper_arm_r",
+      body = bodies.lower_arm,
+      joint = joints.j_rot_y,
+      joint_frame = {
+        r = { 0.0, 0.0, -lengths.lower_arm },
+      },
+      visuals = {
+        {
+	  color = { 0.8,0.8,0.2 },
+	  translate = coms.lower_arm,
+	  geometry = {
+	    sphere = { radius=0.04 },
+	  },
+	},
+        {
+	  color = { 0.2,0.8,0.2 },
+	  translate = { 0.0,0.0,-lengths.lower_arm },
+	  geometry = {
+	    sphere = { radius=0.04 },
+	  },
+	},
+      },
+    },
+
+    {-- left arm
+      name = "upper_arm_l",
+      parent = "upper_trunk",
+      body = bodies.upper_arm,
+      joint = joints.j_spherical,
+      joint_frame = {
+        r = { 0.0, 0.1900, lengths.upper_trunk },
+      },
+      visuals = {
+        {
+	  color = { 0.8,0.8,0.2 },
+	  translate = coms.upper_arm,
+	  geometry = {
+	    sphere = { radius=0.04 },
+	  },
+	},
+        {
+	  color = { 0.2,0.8,0.2 },
+	  geometry = {
+	    sphere = { radius=0.04 },
+	  },
+	},
+        {
+	  color = { 0.2,0.8,0.2 },
+	  translate = { 0.0,0.0,-lengths.upper_arm },
+	  geometry = {
+	    sphere = { radius=0.04 },
+	  },
+	},
+      },
+    },
+
+    {
+      name = "lower_arm_l",
+      parent = "upper_arm_l",
+      body = bodies.lower_arm,
+      joint = joints.j_rot_y,
+      joint_frame = {
+        r = { 0.0, 0.0, -lengths.lower_arm },
+      },
+      visuals = {
+        {
+	  color = { 0.8,0.8,0.2 },
+	  translate = coms.lower_arm,
+	  geometry = {
+	    sphere = { radius=0.04 },
+	  },
+	},
+        {
+	  color = { 0.2,0.8,0.2 },
+	  translate = { 0.0,0.0,-lengths.lower_arm },
+	  geometry = {
+	    sphere = { radius=0.04 },
 	  },
 	},
       },
