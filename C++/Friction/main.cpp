@@ -8,6 +8,13 @@
 const double dt = 0.01;
 const double tmax = 5.0;
 
+struct OneBody {
+  double mMass;
+  Matrix3d mInertia;
+  SpatialVector v, a, f;
+  SpatialTransform X;  
+};
+
 struct PhysicsEngine {
   void update( double t );
   void printData( double dt );
