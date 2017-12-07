@@ -87,11 +87,119 @@ std::string addSphereToLuaFile( std::string BODYName, Vector3d pos ) {
 std::string addSphereToCsvFile( std::string BODYName ) {
   std::stringstream spheres;
   spheres << ""
-    << BODYName <<":T:X,\n"
-    << BODYName <<":T:Y,\n"
-    << BODYName <<":T:Z,\n"
-    << BODYName <<":R:Z,\n"
-    << BODYName <<":R:Y,\n"
-    << BODYName <<":R:X,\n";
+	  << BODYName <<":T:X,\n"
+	  << BODYName <<":T:Y,\n"
+	  << BODYName <<":T:Z,\n"
+	  << BODYName <<":R:Z,\n"
+	  << BODYName <<":R:Y,\n"
+	  << BODYName <<":R:X,\n";
+  return spheres.str();
+}
+
+std::string addBodyMeshDefinitionToLuaFile( std::string BODYName,
+					    Vector3d bbox,
+					    Vector3d color,
+					    Vector3d com ) {
+  std::stringstream spheres;
+  spheres << ""
+    "  Link" << BODYName <<" = {\n"
+    "    name = \"Link" << BODYName <<"\",\n"
+    "    dimensions = { 0.08, 0.08, 0.08 },\n"
+    "    color = { 0.8, 0.2, 0.8 },\n"
+    "    mesh_center = { "<< com[0] <<","<< com[1] <<","<< com[2] <<" },\n"
+    "    geometry = {\n"
+    "      sphere = {radius=1.},\n"
+    "    },\n"
+    "  },\n";
+  spheres << ""
+    "  LinkBody" << BODYName <<" = {\n"
+    "    name = \"LinkBody" << BODYName <<"\",\n"
+    "    dimensions = { "<< bbox[0] <<","<< bbox[1] <<","<< bbox[2] <<"},\n"
+    "    color = { "<< color[0] <<","<< color[1] <<","<< color[2] <<" },\n"
+    "    mesh_center = { "<< com[0] <<","<< com[1] <<","<< com[2] <<" },\n"
+    "    geometry = {\n"
+    "      capsule = {radius=0.2, length=4.0},\n"
+    "    },\n"
+    "  },\n";
+
+  return spheres.str();
+}
+
+std::string addJointMeshToGraphToLuaFile( JointTypeForFile jtype ) {
+  
+}
+
+std::string addBodyToGraphToLuaFile( std::string BODYName,
+				     std::string PARENTBODYName,
+				     SpatialTransform X,
+				     JointTypeForFile jtype ) {
+  std::stringstream spheres;
+  spheres << ""
+    "    {\n"
+    "      name = \"" << BODYName << "\",\n"
+    "      parent = \"" << PARENTBODYName << "\",\n"
+    "      joint_frame = {\n"
+    "        r = { "<< X.r[0] <<","<< X.r[1] <<","<< X.r[2] <<" },\n"
+    "	     E = {\n"
+    "	       { "<< X.E[0][0] <<", "<< X.E[0][1] <<", "<< X.E[0][2] <<" },\n"
+    "	       { "<< X.E[1][0] <<", "<< X.E[1][1] <<", "<< X.E[1][2] <<" },\n"
+    "	       { "<< X.E[2][0] <<", "<< X.E[2][1] <<", "<< X.E[2][2] <<" },\n"
+    "	     },\n"
+    "      },\n"
+    "      visuals = {\n"
+    "        meshes.Link" << BODYName << ",\n"
+    "      },\n"
+    "    },\n"
+    "    {\n"
+    "      name = \"" << BODYName << "\",\n"
+    "      parent = \"" << BODYName << "\",\n"
+    "      visuals = {\n"
+    "        meshes." << getJointNameToLuaFile(jtype) << ",\n"
+    "      },\n"
+    "    },\n";
+  return spheres.str();
+}
+
+std::string getJointNameToLuaFile( JointTypeForFile jtype ) {
+  std::stringstream spheres;
+  if ( jtype==FREEFLAYER ) {
+    spheres << "JointFree";
+  } else if (jtype==ROTYXZ) {
+    spheres << "JointSpherical";
+  } else if (jtype==ROTYZ ||
+	     jtype==ROTY) {
+    spheres << "JointRot";
+  } else {
+    spheres << "";
+  }
+  return spheres.str();
+}
+
+std::string addBodyToCsvFile( std::string BODYName, JointTypeForFile jtype ) {
+  std::stringstream spheres;
+  if ( jtype==FREEFLAYER ) {
+    spheres << ""
+	    << BODYName <<":T:X,\n"
+	    << BODYName <<":T:Y,\n"
+	    << BODYName <<":T:Z,\n"
+	    << BODYName <<":R:Y,\n"
+	    << BODYName <<":R:Z,\n"
+	    << BODYName <<":R:X,\n";
+  } else if (jtype==ROTYXZ) {
+    spheres << ""
+	    << BODYName <<":R:Y,\n"
+	    << BODYName <<":R:X,\n"
+	    << BODYName <<":R:Z,\n";
+  } else if (jtype==ROTYZ) {
+    spheres << ""
+	    << BODYName <<":R:Y,\n"
+	    << BODYName <<":R:Z,\n";
+  } else if (jtype==ROTY) {
+    spheres << ""
+	    << BODYName <<":R:Y,\n";
+  } else {
+    spheres << "";
+      std::cout << "define!!!" << std::endl;
+  }
   return spheres.str();
 }
