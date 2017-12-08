@@ -15,7 +15,7 @@
 using namespace RigidBodyDynamics::Math;
 
 const double dt = 0.01;
-const double tmax = 5.0;
+const double tmax = 0.5;
 
 struct OneBody {
   double mMass;
@@ -61,6 +61,9 @@ void init_engine_with_rod( PhysicsEngine& engine ) {
   engine.body.v=engine.body.a=engine.body.f  = SpatialVectorZero;
   engine.body.X.E = Matrix3dIdentity;
   engine.body.X.r = Vector3dZero;
+
+  engine.body.X.r[2] = 1.0;
+  engine.body.v[3] = 1.0;
 }
 
 void PhysicsEngine::update( double dt ) {
@@ -68,13 +71,32 @@ void PhysicsEngine::update( double dt ) {
   body.step( dt );
 }
 
-void PhysicsEngine::printData( double t ) {}
+void PhysicsEngine::printData( double t ) {
+  std::cout << t << " "
+	    << atan2( body.X.E(0,0),
+		      body.X.E(0,2) )*180./M_PI << " "
+	    << body.X.r[0] << " "
+	    << body.X.r[2] << " "
+	    << body.v[1] << " "
+	    << body.v[3] << " "
+	    << body.v[5] << std::endl;
+}
 
 void OneBody::forwardDynamics( void ) {
   //  a = FD(q,v,f)
+  a[5] = -10.0;
 }
 
 void OneBody::step( double dt ) {
   //  q += dt*v;
-  v += dt*a;
+  double qy = atan2( X.E(0,0), X.E(0,2) );
+  qy += dt*v[1]; // angular y
+  X.E(0,0) = X.E(2,2) = cos(qy);
+  X.E(2,0) = -sin(qy); X.E(0,2) = sin(qy);
+  X.r[0] += dt*v[3]; // position x
+  X.r[2] += dt*v[5]; // position z
+  //  v += dt*a;
+  v[1] += dt*a[1]; // angular velocity wy
+  v[3] += dt*a[3]; // linear velocity vx
+  v[5] += dt*a[5]; // linear velocity vz
 }
