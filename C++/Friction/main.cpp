@@ -62,8 +62,10 @@ void init_engine_with_rod( PhysicsEngine& engine ) {
   engine.body.X.E = Matrix3dIdentity;
   engine.body.X.r = Vector3dZero;
 
-  engine.body.X.r[2] = 1.0;
-  engine.body.v[3] = 1.0;
+  engine.body.X.r[2] = 1.0; // initial height on z-axis
+  engine.body.v[1] = 0.1; // initial angular velocity w0y
+  engine.body.v[3] = 1.0; // initial linear velocity v0x
+  engine.body.v[5] = 1.0; // initial linear velocity v0z
 }
 
 void PhysicsEngine::update( double dt ) {
@@ -83,13 +85,15 @@ void PhysicsEngine::printData( double t ) {
 }
 
 void OneBody::forwardDynamics( void ) {
-  //  a = FD(q,v,f)
-  a[5] = -10.0;
+  //  a = FD(q,v,f) CoM coincides with origin XYZ
+  a[1] = f[1]/mInertia(1,1);
+  a[3] = f[3]/mMass;
+  a[5] = -10.0 + f[5]/mMass;
 }
 
 void OneBody::step( double dt ) {
   //  q += dt*v;
-  double qy = atan2( X.E(0,0), X.E(0,2) );
+  double qy = atan2( X.E(0,2), X.E(0,0) );
   qy += dt*v[1]; // angular y
   X.E(0,0) = X.E(2,2) = cos(qy);
   X.E(2,0) = -sin(qy); X.E(0,2) = sin(qy);
