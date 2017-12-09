@@ -1,0 +1,11 @@
+COLUMNS:
+Time,
+# Free body rod 6dofs
+#rod:R:Z
+rod:R:Y
+#rod:R:X
+rod:T:X
+#rod:T:Y
+rod:T:Z
+#
+DATA_FROM: bin/Rod_data.csv
