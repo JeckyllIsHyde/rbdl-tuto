@@ -22,7 +22,7 @@ model = {
 	    angle = 90
 	  },
 	  geometry = {
-	    capsule = { radius=0.05, length=0.51 }
+	    capsule = { radius=0.05, length=0.6 }
 	  },
 	},
         {
