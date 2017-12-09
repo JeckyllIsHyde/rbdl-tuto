@@ -58,12 +58,17 @@ void init_engine_with_rod( PhysicsEngine& engine ) {
   engine.body.mInertia = Matrix3d(0.0,0.0,0.0,
 				  0.0,0.002,0.0,
 				  0.0,0.0,0.0);
-  engine.body.v=engine.body.a=engine.body.f  = SpatialVectorZero;
+  engine.body.v = engine.body.a = engine.body.f  = SpatialVectorZero;
   engine.body.X.E = Matrix3dIdentity;
   engine.body.X.r = Vector3dZero;
 
+  // intial states
+  double qy = 30*M_PI/180; // intial angular position
+  engine.body.X.E(0,0) = engine.body.X.E(2,2) = cos(qy);
+  engine.body.X.E(2,0) = -sin(qy);
+  engine.body.X.E(0,2) = sin(qy);
   engine.body.X.r[2] = 1.0; // initial height on z-axis
-  engine.body.v[1] = 0.1; // initial angular velocity w0y
+  engine.body.v[1] = 4.0; // initial angular velocity w0y
   engine.body.v[3] = 1.0; // initial linear velocity v0x
   engine.body.v[5] = 1.0; // initial linear velocity v0z
 }
