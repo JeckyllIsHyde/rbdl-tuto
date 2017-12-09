@@ -74,6 +74,21 @@ void init_engine_with_rod( PhysicsEngine& engine ) {
 }
 
 void PhysicsEngine::update( double dt ) {
+  engine.body.f  = SpatialVectorZero;
+  // fq1= y+l/2*sin(th)
+  // fq2= y-l/2*sin(th)
+  // if ( fq1>=r )
+  //   f=0
+  // else
+  //   n1 = [ 0, 1, l/2*cos(t)]
+  //   d1 = [ 1, 0, l/2*cos(t)]
+  //   d2 = [-1, 0, l/2*cos(t)]
+  // if ( fq2>=r )
+  //   f=0
+  // else
+  //   n2 = [ 0, 1,-l/2*cos(t)]
+  //   d3 = [ 1, 0,-l/2*cos(t)]
+  //   d4 = [-1, 0,-l/2*cos(t)]
   body.forwardDynamics();
   body.step( dt );
 }
