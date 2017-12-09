@@ -14,7 +14,7 @@
 
 using namespace RigidBodyDynamics::Math;
 
-const double dt = 0.01;
+const double dt = 0.0025;
 const double tmax = 0.5;
 
 struct OneBody {
@@ -65,12 +65,12 @@ void init_engine_with_rod( PhysicsEngine& engine ) {
   engine.body.X.r = Vector3dZero;
 
   // intial states
-  double qy = 0.*M_PI/180; // intial angular position
+  double qy = 30.*M_PI/180; // intial angular position
   engine.body.setTheta( qy );
   engine.body.X.r[2] = 1.0; // initial height on z-axis
   engine.body.v[1] = 4.0; // initial angular velocity w0y
-  engine.body.v[3] = 1.0; // initial linear velocity v0x
-  engine.body.v[5] = 1.0; // initial linear velocity v0z
+  engine.body.v[3] = 0.0; // initial linear velocity v0x
+  engine.body.v[5] = 0.0; // initial linear velocity v0z
 }
 
 void PhysicsEngine::update( double dt ) {
