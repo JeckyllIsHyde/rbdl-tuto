@@ -23,6 +23,8 @@ struct OneBody {
   SpatialVector v, a, f;
   SpatialTransform X;
 
+  double getTheta( void );
+  void setTheta( double qy );
   void forwardDynamics( void );
   void step( double dt );
 };
@@ -63,10 +65,8 @@ void init_engine_with_rod( PhysicsEngine& engine ) {
   engine.body.X.r = Vector3dZero;
 
   // intial states
-  double qy = 30*M_PI/180; // intial angular position
-  engine.body.X.E(0,0) = engine.body.X.E(2,2) = cos(qy);
-  engine.body.X.E(2,0) = -sin(qy);
-  engine.body.X.E(0,2) = sin(qy);
+  double qy = 0.*M_PI/180; // intial angular position
+  engine.body.setTheta( qy );
   engine.body.X.r[2] = 1.0; // initial height on z-axis
   engine.body.v[1] = 4.0; // initial angular velocity w0y
   engine.body.v[3] = 1.0; // initial linear velocity v0x
@@ -79,14 +79,25 @@ void PhysicsEngine::update( double dt ) {
 }
 
 void PhysicsEngine::printData( double t ) {
-  std::cout << t << " "
-	    << atan2( body.X.E(0,0),
-		      body.X.E(0,2) )*180./M_PI << " "
-	    << body.X.r[0] << " "
-	    << body.X.r[2] << " "
-	    << body.v[1] << " "
-	    << body.v[3] << " "
-	    << body.v[5] << std::endl;
+  const char* separator = ", ";
+  std::cout << t << separator
+	    << body.getTheta()*180./M_PI << separator
+	    << body.X.r[0] << separator
+	    << body.X.r[2]// << separator
+    //<< body.v[1] << separator
+    //<< body.v[3] << separator
+    //<< body.v[5]
+	    << std::endl;
+}
+
+inline double OneBody::getTheta( void ) {
+  return atan2( X.E(0,2), X.E(0,0) );
+}
+
+inline void OneBody::setTheta( double qy ) {
+  X.E(0,0) = X.E(2,2) = cos(qy);
+  X.E(2,0) = -sin(qy);
+  X.E(0,2) = sin(qy);
 }
 
 void OneBody::forwardDynamics( void ) {
@@ -98,10 +109,9 @@ void OneBody::forwardDynamics( void ) {
 
 void OneBody::step( double dt ) {
   //  q += dt*v;
-  double qy = atan2( X.E(0,2), X.E(0,0) );
+  double qy = getTheta();
   qy += dt*v[1]; // angular y
-  X.E(0,0) = X.E(2,2) = cos(qy);
-  X.E(2,0) = -sin(qy); X.E(0,2) = sin(qy);
+  setTheta( qy );
   X.r[0] += dt*v[3]; // position x
   X.r[2] += dt*v[5]; // position z
   //  v += dt*a;
